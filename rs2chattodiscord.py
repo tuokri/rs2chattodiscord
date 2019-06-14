@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 import os
 import sys
 import time
+import psycopg2
+
 from urllib import parse
+from urllib import request
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -88,14 +92,24 @@ class RS2WebAdmin(object):
 
 
 class YaaDiscord(object):
-    def __init__(self, webhook):
-        self.webhook = webhook
+    def __init__(self, webhook_url):
+        self.webhook_url = webhook_url
+        self.user_agent = "DiscordBot (HanoiHannahPython, 1.0)"
 
-    def post_chat(self, chat_messages):
-        pass
+    def post_webhook(self, data_dict):
+        data = json.dumps(data_dict).encode()
+        req = request.Request(self.webhook_url, data=data, headers={
+            "User-Agent": self.user_agent,
+            "Content-Type": "application/json",
+        })
+        with request.urlopen(req) as resp:
+            return resp
 
 
-# TODO: is this needed?
+class ChatLog(object):
+    pass
+
+
 def element_exists_by_class_name(parent, classname) -> bool:
     try:
         parent.find_element_by_class_name(classname)
@@ -106,9 +120,9 @@ def element_exists_by_class_name(parent, classname) -> bool:
 
 def parse_args():
     ap = argparse.ArgumentParser()
-    ap.add_argument("-a", "--address")
-    ap.add_argument("-u", "--username")
-    ap.add_argument("-s", "--password")
+    ap.add_argument("-a", "--address", required=True)
+    ap.add_argument("-u", "--username", required=True)
+    ap.add_argument("-p", "--password", required=True)
     ap.add_argument("-w", "--webhook")
     return ap.parse_args()
 
@@ -120,7 +134,16 @@ def main():
     addr = parse.urlunparse((addr.scheme, addr.netloc, "", "", "", ""))
     print(addr)
     rs2wa = RS2WebAdmin(addr)
+
     yd = YaaDiscord(args.webhook)
+    print(args.webhook)
+    d = {
+        "content": "test number 2 by fluudah",
+        "username": "Hanoi Hannah",
+        "avatar_url": "https://media.discordapp.net/attachments/548634215563132959/589102577279434762/image0.png?width=720&height=457",
+    }
+    # print(yd.post_webhook(data_dict=d))
+
     rs2wa.login(args.username, args.password)
     rs2wa.navigate_to_chat()
 
@@ -129,7 +152,7 @@ def main():
         print(rs2wa.get_chat_notices())
         time.sleep(5)
 
-    yd.post_chat(chat)
+    # yd.post_chat(chat)
 
 
 if __name__ == '__main__':

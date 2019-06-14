@@ -1,0 +1,14 @@
+asn1crypto==0.24.0
+certifi==2019.3.9
+cffi==1.12.3
+cryptography==2.7
+idna==2.8
+psycopg2==2.7.6.1
+pycparser==2.19
+pyOpenSSL==19.0.0
+PySocks==1.7.0
+selenium==3.141.0
+six==1.12.0
+urllib3==1.25.3
+win-inet-pton==1.1.0
+wincertstore==0.2

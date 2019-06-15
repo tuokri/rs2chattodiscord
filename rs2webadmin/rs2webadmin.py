@@ -11,10 +11,6 @@ class RS2WebAdmin(object):
     def __init__(self, config: dict):
         self.config = config
 
-        opt = Options()
-        opt.headless = True
-
-        # webdriver.DesiredCapabilities().FIREFOX["marionette"] = False
         # # TODO: Refactor proxy.
         # proxy = os.environ.get("http_proxy")
         # if proxy:
@@ -26,7 +22,7 @@ class RS2WebAdmin(object):
         #         "proxyType": "MANUAL",
         #     }
 
-        self.driver = webdriver.Chrome(options=opt)
+        self.driver = webdriver.Chrome()
         self.login_url = parse.urljoin(self.config["ADDRESS"], self.config["LOGIN_PATH"])
         self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
 

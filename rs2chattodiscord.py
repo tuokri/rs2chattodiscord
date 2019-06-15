@@ -60,6 +60,10 @@ def main():
         cfg["DISCORD"]["AVATAR_URL"] = os.environ["DISCORD_AVATAR_URL"]
         cfg["DISCORD"]["USER_AGENT"] = os.environ["DISCORD_USER_AGENT"]
 
+        from pyvirtualdisplay import Display
+        display = Display(visible=0, size=(800, 600))
+        display.start()
+
     try:
         cfg["RS2_WEBADMIN"]["ADDRESS"] = validate_address(cfg["RS2_WEBADMIN"]["ADDRESS"])
     except ValueError:

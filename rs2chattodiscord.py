@@ -2,6 +2,7 @@
 
 import argparse
 import configparser as cp
+import logging
 import os
 import sys
 import time
@@ -12,6 +13,8 @@ from chatlog import ChatLog
 from chatlog import to_pretty_str
 from rs2webadmin import RS2WebAdmin
 from yaadiscord import YaaDiscord
+
+logger = logging.getLogger(__name__)
 
 
 def read_config(config_file: str) -> cp.ConfigParser:
@@ -25,7 +28,7 @@ def validate_address(address: str) -> str:
         address = parse.urlparse(address)
         return parse.urlunparse((address.scheme, address.netloc, "", "", "", ""))
     except Exception as e:
-        print(f"Invalid address: {e}")
+        logging.error("Invalid address: %s", e)
         raise ValueError(e)
 
 
@@ -65,6 +68,8 @@ def main():
     except ValueError:
         sys.exit(1)
 
+    logger.info("Running with config: %s", cfg)
+
     rs2wa = RS2WebAdmin(cfg["RS2_WEBADMIN"])
     yaa = YaaDiscord(cfg["DISCORD"])
     chatlog = ChatLog()
@@ -78,7 +83,7 @@ def main():
         # TODO: Add this if deemed necessary.
         #  cns = rs2wa.get_chat_notices()
         if cms:
-            print(f"Got {len(cms)} messages from RS2 WebAdmin")
+            logging.info("Got %s messages from RS2 WebAdmin", len(cms))
             for chat_msg in cms:
                 chatlog.add(ChatEntry(chat_msg))
 
@@ -90,7 +95,7 @@ def main():
                 posted += 1
             time.sleep(0.1)
 
-        print(f"Posted {posted} messages to Discord")
+        logging.info("Posted %s messages to Discord", posted)
         time.sleep(2)
 
 

@@ -31,14 +31,17 @@ def validate_address(address: str) -> str:
 
 def parse_args():
     ap = argparse.ArgumentParser()
-    ccfg = ap.add_argument_group("clicfg")
+
     fcfg = ap.add_argument_group("filecfg")
+    fcfg.add_argument("-c", "--config")
+
+    ccfg = ap.add_argument_group("clicfg")
     ccfg.add_argument("-a", "--address")
     ccfg.add_argument("-u", "--username")
     ccfg.add_argument("-p", "--password")
     ccfg.add_argument("-w", "--webhook")
-    ccfg.add_argument("-h", "--heroku", action="store_true")
-    fcfg.add_argument("-c", "--config")
+    ccfg.add_argument("--heroku", action="store_true")
+
     return ap.parse_args()
 
 

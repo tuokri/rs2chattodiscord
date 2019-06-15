@@ -4,12 +4,15 @@ from urllib import parse
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.firefox.options import Options
 
 
 class RS2WebAdmin(object):
     def __init__(self, config: dict):
         self.config = config
 
+        opt = Options()
+        opt.headless = True
         webdriver.DesiredCapabilities().FIREFOX["marionette"] = False
 
         # TODO: Refactor proxy.
@@ -23,7 +26,7 @@ class RS2WebAdmin(object):
                 "proxyType": "MANUAL",
             }
 
-        self.driver = webdriver.Firefox()
+        self.driver = webdriver.Firefox(options=opt)
         self.login_url = parse.urljoin(self.config["ADDRESS"], self.config["LOGIN_PATH"])
         self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
 

@@ -1,9 +1,12 @@
+import logging
 import os
 from urllib import parse
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import Select
+
+logger = logging.getLogger(__name__)
 
 
 class RS2WebAdmin(object):
@@ -32,8 +35,6 @@ class RS2WebAdmin(object):
         options.add_argument('window-size=1200x600')
         self.driver = webdriver.Chrome(executable_path=chromedriver_path, chrome_options=options)
 
-        # chrome_exec_shim = os.environ.get("GOOGLE_CHROME_BIN", "chromedriver")
-        # self.driver = webdriver.Chrome(executable_path=chrome_exec_shim)
         self.login_url = parse.urljoin(self.config["ADDRESS"], self.config["LOGIN_PATH"])
         self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
 
@@ -45,6 +46,7 @@ class RS2WebAdmin(object):
         self.driver.quit()
 
     def login(self):
+        logger.info("Logging in")
         self.driver.get(self.login_url)
         if "Login" not in self.driver.title:
             raise NoSuchElementException("no 'Login' in driver.title")
@@ -63,13 +65,14 @@ class RS2WebAdmin(object):
         self.driver.find_element_by_tag_name("button").click()
 
     def navigate_to_chat(self):
+        logging.info("Navigating to chat: {}", self.chat_url)
         self.driver.get(self.chat_url)
 
     def get_chat_messages(self) -> list:
         try:
             chatlog = self.driver.find_element_by_id("chatlog")
         except NoSuchElementException as nse:
-            print(f"error {nse}")
+            logger.error(f"error {nse}")
             return []
 
         chat_messages = chatlog.find_elements_by_class_name("chatmessage")
@@ -85,7 +88,7 @@ class RS2WebAdmin(object):
         try:
             chatlog = self.driver.find_element_by_id("chatlog")
         except NoSuchElementException as nse:
-            print(f"error {nse}")
+            logger.error(f"error {nse}")
             return []
 
         chat_notices = chatlog.find_elements_by_class_name("chatnotice")

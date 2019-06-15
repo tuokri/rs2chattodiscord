@@ -21,8 +21,8 @@ class RS2WebAdmin(object):
         #         "proxyType": "MANUAL",
         #     }
 
-        self.driver = webdriver.Chrome(
-            executable_path=os.environ["GOOGLE_CHROME_SHIM"])
+        chrome_exec_shim = os.environ.get("GOOGLE_CHROME_BIN", "chromedriver")
+        self.driver = webdriver.Chrome(executable_path=chrome_exec_shim)
         self.login_url = parse.urljoin(self.config["ADDRESS"], self.config["LOGIN_PATH"])
         self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
 

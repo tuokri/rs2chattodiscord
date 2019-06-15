@@ -65,14 +65,14 @@ class RS2WebAdmin(object):
         self.driver.find_element_by_tag_name("button").click()
 
     def navigate_to_chat(self):
-        logging.info("Navigating to chat: {}", self.chat_url)
+        logging.info("Navigating to chat: %s", self.chat_url)
         self.driver.get(self.chat_url)
 
     def get_chat_messages(self) -> list:
         try:
             chatlog = self.driver.find_element_by_id("chatlog")
         except NoSuchElementException as nse:
-            logger.error("get_chat_messages(): error {}", nse)
+            logger.error("get_chat_messages(): error %s", nse)
             return []
 
         chat_messages = chatlog.find_elements_by_class_name("chatmessage")

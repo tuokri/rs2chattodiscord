@@ -1,5 +1,4 @@
 import os
-from urllib import parse
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -21,10 +20,21 @@ class RS2WebAdmin(object):
         #         "proxyType": "MANUAL",
         #     }
 
-        chrome_exec_shim = os.environ.get("GOOGLE_CHROME_BIN", "chromedriver")
-        self.driver = webdriver.Chrome(executable_path=chrome_exec_shim)
-        self.login_url = parse.urljoin(self.config["ADDRESS"], self.config["LOGIN_PATH"])
-        self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
+        chromedriver_path = "/app/.chromedriver/bin/chromedriver"
+
+        chrome_bin = os.environ.get('GOOGLE_CHROME_BIN', "chromedriver")
+        options = webdriver.ChromeOptions()
+        options.binary_location = chrome_bin
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
+        options.add_argument('headless')
+        options.add_argument('window-size=1200x600')
+        self.driver = webdriver.Chrome(executable_path=chromedriver_path, chrome_options=options)
+
+        # chrome_exec_shim = os.environ.get("GOOGLE_CHROME_BIN", "chromedriver")
+        # self.driver = webdriver.Chrome(executable_path=chrome_exec_shim)
+        # self.login_url = parse.urljoin(self.config["ADDRESS"], self.config["LOGIN_PATH"])
+        # self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
 
     def __del__(self):
         self.quit()

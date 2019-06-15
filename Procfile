@@ -1,1 +1,1 @@
-worker: python rs2chattodiscord.py
+worker: python rs2chattodiscord.py -c config.ini

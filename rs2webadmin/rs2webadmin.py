@@ -13,20 +13,20 @@ class RS2WebAdmin(object):
 
         opt = Options()
         opt.headless = True
-        webdriver.DesiredCapabilities().FIREFOX["marionette"] = False
 
-        # TODO: Refactor proxy.
-        proxy = os.environ.get("http_proxy")
-        if proxy:
-            print(f"Using proxy: {proxy}")
-            webdriver.DesiredCapabilities.FIREFOX["proxy"] = {
-                "httpProxy": proxy,
-                "ftpProxy": proxy,
-                "sslProxy": proxy,
-                "proxyType": "MANUAL",
-            }
+        # webdriver.DesiredCapabilities().FIREFOX["marionette"] = False
+        # # TODO: Refactor proxy.
+        # proxy = os.environ.get("http_proxy")
+        # if proxy:
+        #     print(f"Using proxy: {proxy}")
+        #     webdriver.DesiredCapabilities.FIREFOX["proxy"] = {
+        #         "httpProxy": proxy,
+        #         "ftpProxy": proxy,
+        #         "sslProxy": proxy,
+        #         "proxyType": "MANUAL",
+        #     }
 
-        self.driver = webdriver.Firefox(options=opt)
+        self.driver = webdriver.Chrome(options=opt)
         self.login_url = parse.urljoin(self.config["ADDRESS"], self.config["LOGIN_PATH"])
         self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
 

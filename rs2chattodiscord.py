@@ -2,6 +2,7 @@
 
 import argparse
 import configparser as cp
+import os
 import sys
 import time
 from urllib import parse
@@ -36,7 +37,7 @@ def parse_args():
     ccfg.add_argument("-u", "--username")
     ccfg.add_argument("-p", "--password")
     ccfg.add_argument("-w", "--webhook")
-    ccfg.add_argument("-g", "--geckodriver")
+    ccfg.add_argument("-h", "--heroku", action="store_true")
     fcfg.add_argument("-c", "--config")
     return ap.parse_args()
 
@@ -50,8 +51,9 @@ def main():
     except ValueError:
         sys.exit(1)
 
-    if args.geckodriver:
-        sys.path.append(args.geckodriver)
+    if args.heroku:
+        os.environ["PATH"] += os.pathsep + "/usr/local/bin:/usr/bin:/bin:/app/vendor/"
+        os.environ["LD_LIBRARY_PATH"] += os.pathsep + "/usr/local/lib:/usr/lib:/lib:/app/vendor"
 
     rs2wa = RS2WebAdmin(cfg["RS2_WEBADMIN"])
     yaa = YaaDiscord(cfg["DISCORD"])

@@ -8,6 +8,7 @@ from urllib import parse
 
 from chatlog import ChatEntry
 from chatlog import ChatLog
+from chatlog import to_pretty_str
 from rs2webadmin import RS2WebAdmin
 from yaadiscord import YaaDiscord
 
@@ -35,6 +36,7 @@ def parse_args():
     ccfg.add_argument("-u", "--username")
     ccfg.add_argument("-p", "--password")
     ccfg.add_argument("-w", "--webhook")
+    ccfg.add_argument("-g", "--geckodriver")
     fcfg.add_argument("-c", "--config")
     return ap.parse_args()
 
@@ -47,6 +49,9 @@ def main():
         cfg["RS2_WEBADMIN"]["ADDRESS"] = validate_address(cfg["RS2_WEBADMIN"]["ADDRESS"])
     except ValueError:
         sys.exit(1)
+
+    if args.geckodriver:
+        sys.path.append(args.geckodriver)
 
     rs2wa = RS2WebAdmin(cfg["RS2_WEBADMIN"])
     yaa = YaaDiscord(cfg["DISCORD"])

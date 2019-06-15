@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 import time
+from collections import defaultdict
 from urllib import parse
 
 from chatlog import ChatEntry
@@ -52,7 +53,7 @@ def main():
     args = parse_args()
 
     if args.heroku:
-        cfg = {}
+        cfg = defaultdict(dict)
         cfg["RS2_WEBADMIN"]["ADDRESS"] = os.environ["RS2_WEBADMIN_ADDRESS"]
         cfg["RS2_WEBADMIN"]["USERNAME"] = os.environ["RS2_WEBADMIN_USERNAME"]
         cfg["RS2_WEBADMIN"]["PASSWORD"] = os.environ["RS2_WEBADMIN_PASSWORD"]

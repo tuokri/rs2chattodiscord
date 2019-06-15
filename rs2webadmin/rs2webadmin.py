@@ -33,8 +33,8 @@ class RS2WebAdmin(object):
 
         # chrome_exec_shim = os.environ.get("GOOGLE_CHROME_BIN", "chromedriver")
         # self.driver = webdriver.Chrome(executable_path=chrome_exec_shim)
-        # self.login_url = parse.urljoin(self.config["ADDRESS"], self.config["LOGIN_PATH"])
-        # self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
+        self.login_url = parse.urljoin(self.config["ADDRESS"], self.config["LOGIN_PATH"])
+        self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
 
     def __del__(self):
         self.quit()

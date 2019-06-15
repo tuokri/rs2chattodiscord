@@ -10,6 +10,8 @@ class RS2WebAdmin(object):
     def __init__(self, config: dict):
         self.config = config
 
+        webdriver.DesiredCapabilities().FIREFOX["marionette"] = False
+
         # TODO: Refactor proxy.
         proxy = os.environ.get("http_proxy")
         if proxy:

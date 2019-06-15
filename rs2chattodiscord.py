@@ -70,9 +70,10 @@ def main():
     chatlog = ChatLog()
 
     rs2wa.login()
-    rs2wa.navigate_to_chat()
 
     while True:
+        rs2wa.navigate_to_chat()
+
         cms = rs2wa.get_chat_messages()
         # TODO: Add this if deemed necessary.
         #  cns = rs2wa.get_chat_notices()
@@ -83,7 +84,6 @@ def main():
 
         posted = 0
         for chat_entry in chatlog:
-            hash(chat_entry)
             if not chat_entry.sent:
                 yaa.post_chat_message(to_pretty_str(chat_entry))
                 chat_entry.sent = True

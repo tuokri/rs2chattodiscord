@@ -72,7 +72,7 @@ class RS2WebAdmin(object):
         try:
             chatlog = self.driver.find_element_by_id("chatlog")
         except NoSuchElementException as nse:
-            logger.error(f"error {nse}")
+            logger.error("get_chat_messages(): error {}", nse)
             return []
 
         chat_messages = chatlog.find_elements_by_class_name("chatmessage")

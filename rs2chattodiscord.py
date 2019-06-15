@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 
 import argparse
-import configparser
+import configparser as cp
 import sys
+import time
 from urllib import parse
 
 from rs2webadmin import RS2WebAdmin
 from yaadiscord import YaaDiscord
 
 
-def read_config(config_file: str) -> dict:
-    config = configparser.ConfigParser()
-    return config.read(config_file)
+def read_config(config_file: str) -> cp.ConfigParser:
+    config = cp.ConfigParser()
+    config.read(config_file)
+    return config
 
 
 def validate_address(address: str) -> str:
@@ -47,7 +49,7 @@ def main():
     rs2wa = RS2WebAdmin(cfg["RS2_WEBADMIN"])
     yd = YaaDiscord(cfg["DISCORD"])
 
-    rs2wa.login(args.username, args.password)
+    rs2wa.login()
     rs2wa.navigate_to_chat()
 
     while True:
@@ -55,6 +57,10 @@ def main():
         print(cms)
         # TODO: Add this if deemed necessary.
         #  cns = rs2wa.get_chat_notices()
+        if cms:
+            for c in cms:
+                print(yd.post_chat_message(c))
+        time.sleep(5)
 
 
 if __name__ == '__main__':

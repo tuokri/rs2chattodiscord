@@ -26,21 +26,24 @@ class RS2WebAdmin(object):
         self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
 
     def __del__(self):
+        self.quit()
+
+    def quit(self):
         self.driver.close()
         self.driver.quit()
 
-    def login(self, username: str, password: str):
+    def login(self):
         self.driver.get(self.login_url)
         if "Login" not in self.driver.title:
             raise NoSuchElementException("no 'Login' in driver.title")
 
         uname = self.driver.find_element_by_id("username")
         uname.clear()
-        uname.send_keys(username)
+        uname.send_keys(self.config["USERNAME"])
 
         passw = self.driver.find_element_by_id("password")
         passw.clear()
-        passw.send_keys(password)
+        passw.send_keys(self.config["PASSWORD"])
 
         remember = Select(self.driver.find_element_by_tag_name("select"))
         remember.select_by_value("2678400")

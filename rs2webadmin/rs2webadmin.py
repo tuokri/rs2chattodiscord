@@ -5,6 +5,10 @@ from urllib import parse
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 logger = logging.getLogger(__name__)
 
@@ -69,13 +73,25 @@ class RS2WebAdmin(object):
         self.driver.get(self.chat_url)
 
     def get_chat_messages(self) -> list:
+        # try:
+        #     chatlog = WebDriverWait(self.driver, 10).until(
+        #         EC.presence_of_element_located((By.ID, "chatlog"))
+        #     )
+        # except NoSuchElementException as nse:
+        #     logger.error("get_chat_messages(): error %s", nse)
+        #     return []
+        # except TimeoutException as te:
+        #     logger.error("get_chat_messages(): error %s", te)
+        #     return []
+
         try:
-            chatlog = self.driver.find_element_by_id("chatlog")
-        except NoSuchElementException as nse:
-            logger.error("get_chat_messages(): error %s", nse)
+            chat_messages = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "chatmessage"))
+            )
+        except TimeoutException as te:
+            logger.error("get_chat_messages(): error %s", te)
             return []
 
-        chat_messages = chatlog.find_elements_by_class_name("chatmessage")
         return [{
             "teamcolor:": cm.find_element_by_class_name("teamcolor").get_attribute("style"),
             "teamnotice": cm.find_element_by_class_name("teamnotice").text if

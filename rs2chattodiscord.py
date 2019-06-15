@@ -6,6 +6,8 @@ import sys
 import time
 from urllib import parse
 
+from chatlog import ChatEntry
+from chatlog import ChatLog
 from rs2webadmin import RS2WebAdmin
 from yaadiscord import YaaDiscord
 
@@ -47,20 +49,32 @@ def main():
         sys.exit(1)
 
     rs2wa = RS2WebAdmin(cfg["RS2_WEBADMIN"])
-    yd = YaaDiscord(cfg["DISCORD"])
+    yaa = YaaDiscord(cfg["DISCORD"])
+    chatlog = ChatLog()
 
     rs2wa.login()
     rs2wa.navigate_to_chat()
 
     while True:
         cms = rs2wa.get_chat_messages()
-        print(cms)
         # TODO: Add this if deemed necessary.
         #  cns = rs2wa.get_chat_notices()
         if cms:
-            for c in cms:
-                print(yd.post_chat_message(c))
-        time.sleep(5)
+            print(f"Got {len(cms)} messages from RS2 WebAdmin")
+            for chat_msg in cms:
+                chatlog.add(ChatEntry(chat_msg))
+
+        posted = 0
+        for chat_entry in chatlog:
+            hash(chat_entry)
+            if not chat_entry.sent:
+                yaa.post_chat_message(to_pretty_str(chat_entry))
+                chat_entry.sent = True
+                posted += 1
+            time.sleep(0.1)
+
+        print(f"Posted {posted} messages to Discord")
+        time.sleep(2)
 
 
 if __name__ == '__main__':

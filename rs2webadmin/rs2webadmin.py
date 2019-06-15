@@ -12,7 +12,7 @@ class RS2WebAdmin(object):
         self.config = config
 
         opt = Options()
-        opt.add_argument("headless")
+        opt.headless = True
 
         # # TODO: Refactor proxy.
         # proxy = os.environ.get("http_proxy")
@@ -25,7 +25,7 @@ class RS2WebAdmin(object):
         #         "proxyType": "MANUAL",
         #     }
 
-        self.driver = webdriver.Chrome(options=opt)
+        self.driver = webdriver.Chrome(chrome_options=opt)
         self.login_url = parse.urljoin(self.config["ADDRESS"], self.config["LOGIN_PATH"])
         self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
 

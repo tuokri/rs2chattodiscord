@@ -50,9 +50,9 @@ def parse_args():
 
 def main():
     args = parse_args()
-    cfg = read_config(args.config)
 
     if args.heroku:
+        cfg = {}
         cfg["RS2_WEBADMIN"]["ADDRESS"] = os.environ["RS2_WEBADMIN_ADDRESS"]
         cfg["RS2_WEBADMIN"]["USERNAME"] = os.environ["RS2_WEBADMIN_USERNAME"]
         cfg["RS2_WEBADMIN"]["PASSWORD"] = os.environ["RS2_WEBADMIN_PASSWORD"]
@@ -62,6 +62,8 @@ def main():
         cfg["DISCORD"]["WEBHOOK_URL"] = os.environ["DISCORD_WEBHOOK_URL"]
         cfg["DISCORD"]["AVATAR_URL"] = os.environ["DISCORD_AVATAR_URL"]
         cfg["DISCORD"]["USER_AGENT"] = os.environ["DISCORD_USER_AGENT"]
+    else:
+        cfg = read_config(args.config)
 
     try:
         cfg["RS2_WEBADMIN"]["ADDRESS"] = validate_address(cfg["RS2_WEBADMIN"]["ADDRESS"])

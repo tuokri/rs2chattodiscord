@@ -1,4 +1,5 @@
 import os
+from urllib import parse
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException

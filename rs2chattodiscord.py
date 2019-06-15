@@ -55,7 +55,9 @@ def main():
         sys.exit(1)
 
     if args.heroku:
-        os.environ["PATH"] += os.pathsep + "/usr/local/bin:/usr/bin:/bin:/app/vendor/:/app/vendor/firefox"
+        os.environ["PATH"] += os.pathsep + "/usr/local/bin:/usr/bin:/bin:/app/vendor/"
+        os.environ["PATH"] += os.pathsep + "/usr/local/bin:/usr/bin:/bin:/app/vendor/firefox"
+        os.environ["LD_LIBRARY_PATH"] += os.pathsep + "/usr/local/lib:/usr/lib:/lib:/app/vendor"
         os.environ["LD_LIBRARY_PATH"] += os.pathsep + "/usr/local/lib:/usr/lib:/lib:/app/vendor:/app/vendor/firefox"
 
     rs2wa = RS2WebAdmin(cfg["RS2_WEBADMIN"])

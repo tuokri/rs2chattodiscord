@@ -4,12 +4,15 @@ from urllib import parse
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import Select
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.options import Options
 
 
 class RS2WebAdmin(object):
     def __init__(self, config: dict):
         self.config = config
+
+        opt = Options()
+        opt.add_argument("headless")
 
         # # TODO: Refactor proxy.
         # proxy = os.environ.get("http_proxy")
@@ -22,7 +25,7 @@ class RS2WebAdmin(object):
         #         "proxyType": "MANUAL",
         #     }
 
-        self.driver = webdriver.Chrome()
+        self.driver = webdriver.Chrome(options=opt)
         self.login_url = parse.urljoin(self.config["ADDRESS"], self.config["LOGIN_PATH"])
         self.chat_url = parse.urljoin(self.config["ADDRESS"], self.config["CHAT_PATH"])
 

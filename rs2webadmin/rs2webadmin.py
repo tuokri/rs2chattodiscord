@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from urllib import parse
 
 from selenium import webdriver
@@ -11,6 +12,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 class RS2WebAdmin(object):
@@ -89,7 +96,7 @@ class RS2WebAdmin(object):
                 EC.presence_of_element_located((By.CLASS_NAME, "chatmessage"))
             )
         except TimeoutException as te:
-            logger.error("get_chat_messages(): error %s", te)
+            logger.error("get_chat_messages(): error %s", te.msg)
             return []
 
         return [{

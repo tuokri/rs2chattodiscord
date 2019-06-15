@@ -16,6 +16,12 @@ from rs2webadmin import RS2WebAdmin
 from yaadiscord import YaaDiscord
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 def read_config(config_file: str) -> cp.ConfigParser:

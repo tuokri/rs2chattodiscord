@@ -5,11 +5,11 @@ from urllib import parse
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import WebDriverWait
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -62,21 +62,48 @@ class RS2WebAdmin(object):
         if "Login" not in self.driver.title:
             raise NoSuchElementException("no 'Login' in driver.title")
 
-        uname = self.driver.find_element_by_id("username")
+        try:
+            uname = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.ID, "username"))
+            )
+        except TimeoutException as te:
+            logger.error("get_chat_messages(): error %s", te)
+            raise te
+
         uname.clear()
         uname.send_keys(self.config["USERNAME"])
 
-        passw = self.driver.find_element_by_id("password")
+        try:
+            passw = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.ID, "password"))
+            )
+        except TimeoutException as te:
+            logger.error("get_chat_messages(): error %s", te)
+            raise te
+
         passw.clear()
         passw.send_keys(self.config["PASSWORD"])
 
-        remember = Select(self.driver.find_element_by_tag_name("select"))
+        try:
+            remember = Select(WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "select"))
+            ))
+        except TimeoutException as te:
+            logger.error("get_chat_messages(): error %s", te)
+            raise te
+
         remember.select_by_value("2678400")
 
-        self.driver.find_element_by_tag_name("button").click()
+        try:
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "button"))
+            ).click()
+        except TimeoutException as te:
+            logger.error("get_chat_messages(): error %s", te)
+            raise te
 
     def navigate_to_chat(self):
-        logging.info("Navigating to chat: %s", self.chat_url)
+        logger.info("Navigating to chat: %s", self.chat_url)
         self.driver.get(self.chat_url)
 
     def get_chat_messages(self) -> list:
@@ -96,7 +123,7 @@ class RS2WebAdmin(object):
                 EC.presence_of_element_located((By.CLASS_NAME, "chatmessage"))
             )
         except TimeoutException as te:
-            logger.error("get_chat_messages(): error %s", te.msg)
+            logger.error("get_chat_messages(): error %s", te)
             return []
 
         return [{

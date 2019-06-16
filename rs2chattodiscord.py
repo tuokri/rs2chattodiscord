@@ -8,6 +8,8 @@ import os
 import re
 import sys
 import time
+import multiprocessing as mp
+
 from collections import defaultdict
 from io import BytesIO
 from logging.handlers import RotatingFileHandler
@@ -35,6 +37,9 @@ logger.addHandler(file_handler)
 HEADERS = {}
 HEADERS_MAX_LEN = 500
 RUNNING = True
+MESSAGE_FORMAT = "({team}){emoji} {username}: {message}"
+NORTH_EMOJI = ":red_circle:"
+SOUTH_EMOJI = ":large_blue_circle:"
 
 
 def read_config(config_file: str) -> cp.ConfigParser:
@@ -298,7 +303,6 @@ def main():
 
         resp = get_messages(c, chat_data_url, sessionid, authcred, authtimeout)
         encoding = read_encoding(HEADERS, 2)
-        # print_headers(HEADERS)
         parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
         divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
 
@@ -309,9 +313,22 @@ def main():
             name = div.find("span", attrs={"class": "username"})
             msg = div.find("span", attrs={"class": "message"})
 
-            print(teamcolor, teamnotice, name, msg)
+            if teamnotice:
+                team = "TEAM"
+                if teamcolor.get("style") == "background: #E54927;":
+                    emoji = NORTH_EMOJI
+                else:
+                    emoji = SOUTH_EMOJI
+            else:
+                team = "ALL"
+                emoji = ""
+
+            chat_msg = MESSAGE_FORMAT.format(
+                team=team, emoji=emoji, username=name.text, message=msg.text)
+            print(chat_msg)
+            # print(teamcolor, teamnotice, name, msg)
             # yd.post_chat_message()
-            time.sleep(0.1)
+            time.sleep(0.05)
 
         time.sleep(5)
 

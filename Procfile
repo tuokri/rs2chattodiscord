@@ -1,1 +1,1 @@
-worker: python rs2chattodiscord.py -c config.ini --heroku
+worker: python rs2chattodiscord.py --heroku

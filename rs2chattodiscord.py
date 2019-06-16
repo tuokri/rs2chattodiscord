@@ -10,6 +10,7 @@ import sys
 import time
 from collections import defaultdict
 from io import BytesIO
+from logging.handlers import RotatingFileHandler
 from urllib import parse
 
 import pycurl
@@ -26,12 +27,13 @@ console_handler.setLevel(logging.DEBUG)
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
-file_handler = logging.FileHandler("rs2chattodiscord" + ".log")
+file_handler = RotatingFileHandler("rs2chattodiscord" + ".log", maxBytes=1024 * 1024 * 10, encoding="utf-8")
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
 HEADERS = {}
+HEADERS_MAX_LEN = 500
 RUNNING = True
 
 
@@ -58,6 +60,11 @@ def parse_args():
 
 
 def header_function(header_line):
+    global HEADERS
+    if len(HEADERS) > HEADERS_MAX_LEN:
+        logging.info("Headers max length (%s) exceeded, resetting headers", HEADERS_MAX_LEN)
+        HEADERS = {}
+
     # HTTP standard specifies that headers are encoded in iso-8859-1.
     header_line = header_line.decode("iso-8859-1")
 
@@ -270,22 +277,20 @@ def main():
     post_login(c, login_url, sessionid=sessionid,
                token=token, username=username, password=password)
 
-    authcred = any(item.startswith("authcred=") for item in HEADERS["set-cookie"])
-    authtimeout = any(item.startswith("authtimeout=") for item in HEADERS["set-cookie"])
-
     authcred = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][0]
     authtimeout = [i for i in HEADERS["set-cookie"] if i.startswith("authtimeout=")][0]
 
-    print_headers(HEADERS)
-    print("authcred:", authcred)
-    print("authtimeout:", authtimeout)
+    # print_headers(HEADERS)
+    logger.debug("authcred: %s", authcred)
+    logger.debug("authtimeout: %s", authtimeout)
 
     while RUNNING:
         resp = get_messages(c, chat_data_url, sessionid, authcred, authtimeout)
         encoding = read_encoding(HEADERS, 2)
-        print(resp.decode(encoding))
-        print_headers(HEADERS)
-        time.sleep(5)
+        # print_headers(HEADERS)
+        parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
+        print(parsed_html.text)
+        time.sleep(2)
 
     c.close()
 

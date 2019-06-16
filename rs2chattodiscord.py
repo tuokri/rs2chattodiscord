@@ -280,8 +280,9 @@ def main():
     while RUNNING:
         resp = get_messages(c, chat_data_url, sessionid, authcred, authtimeout)
         encoding = read_encoding(HEADERS, 2)
-        print(resp.decode(encoding))
-        time.sleep(1)
+        # print(resp.decode(encoding))
+        print_headers(HEADERS)
+        time.sleep(5)
 
     c.close()
 

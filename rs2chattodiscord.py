@@ -284,7 +284,7 @@ def main():
     authcred = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][0]
     authtimeout = [i for i in HEADERS["set-cookie"] if i.startswith("authtimeout=")][0]
 
-    authtimeout_value = re.search(r'authtimeout="(.*)"; ', authtimeout).group(1)
+    authtimeout_value = re.search(r'authtimeout="(.*?)"', authtimeout).group(1)
 
     # print_headers(HEADERS)
     logger.debug("authcred: %s", authcred)

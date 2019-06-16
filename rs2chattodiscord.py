@@ -274,8 +274,8 @@ def main():
     authtimeout = any(item.startswith("authtimeout=") for item in HEADERS["set-cookie"])
 
     print_headers(HEADERS)
-    print(authcred)
-    print(authtimeout)
+    print("authcred:", authcred)
+    print("authtimeout:", authtimeout)
 
     while RUNNING:
         resp = get_messages(c, chat_data_url, sessionid, authcred, authtimeout)

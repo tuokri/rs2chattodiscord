@@ -303,6 +303,7 @@ def main():
         divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
 
         for div in divs:
+            print(div)
             teamcolor = div.get("teamcolor")
             teamnotice = div.get("teamnotice")
             name = div.get("username")

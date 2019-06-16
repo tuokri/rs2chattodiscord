@@ -229,9 +229,6 @@ def get_messages(c, url, sessionid, authcred, authtimeout):
 
 def main():
     args = parse_args()
-
-    username = ""
-    password = ""
     cfg = defaultdict(dict)
 
     if args.heroku:
@@ -255,6 +252,9 @@ def main():
 
     login_url = parse.urljoin(cfg["RS2_WEBADMIN"]["ADDRESS"], cfg["RS2_WEBADMIN"]["LOGIN_PATH"])
     chat_data_url = parse.urljoin(cfg["RS2_WEBADMIN"]["ADDRESS"], cfg["RS2_WEBADMIN"]["CHAT_PATH"])
+
+    username = cfg["RS2_WEBADMIN"]["USERNAME"]
+    password = cfg["RS2_WEBADMIN"]["PASSWORD"]
 
     yd = YaaDiscord(cfg["DISCORD"])
 

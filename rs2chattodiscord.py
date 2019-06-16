@@ -304,23 +304,22 @@ def main():
 
         for div in divs:
             print(div)
-            teamcolor = div.get("teamcolor")
-            teamnotice = div.get("teamnotice")
-            name = div.get("username")
-            msg = div.get("message")
+            teamcolor = div.find("span", attrs={"class": "teamcolor"})
+            teamnotice = div.find("span", attrs={"class": "teamnotice"})
+            name = div.find("span", attrs={"class": "username"})
+            msg = div.find("span", attrs={"class": "message"})
 
             print(teamcolor, teamnotice, name, msg)
 
             # yd.post_chat_message()
             time.sleep(0.1)
 
-        time.sleep(5)
+            time.sleep(5)
 
-    c.close()
+            c.close()
 
-
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        sys.exit(0)
+            if __name__ == "__main__":
+        try:
+            main()
+        except KeyboardInterrupt:
+            sys.exit(0)

@@ -310,13 +310,12 @@ def main():
             msg = div.find("span", attrs={"class": "message"})
 
             print(teamcolor, teamnotice, name, msg)
-
             # yd.post_chat_message()
             time.sleep(0.1)
 
-            time.sleep(5)
+        time.sleep(5)
 
-            c.close()
+    c.close()
 
 
 if __name__ == "__main__":

@@ -289,7 +289,7 @@ def main():
         encoding = read_encoding(HEADERS, 2)
         # print_headers(HEADERS)
         parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
-        print(parsed_html.text)
+        print(parsed_html)
         time.sleep(2)
 
     c.close()

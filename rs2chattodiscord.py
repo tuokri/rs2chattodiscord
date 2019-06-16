@@ -307,7 +307,6 @@ def main():
         divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
 
         for div in divs:
-            print(div)
             teamcolor = div.find("span", attrs={"class": "teamcolor"})
             teamnotice = div.find("span", attrs={"class": "teamnotice"})
             name = div.find("span", attrs={"class": "username"})
@@ -325,9 +324,7 @@ def main():
 
             chat_msg = MESSAGE_FORMAT.format(
                 team=team, emoji=emoji, username=name.text, message=msg.text)
-            print(chat_msg)
-            # print(teamcolor, teamnotice, name, msg)
-            # yd.post_chat_message()
+            yd.post_chat_message(chat_msg)
             time.sleep(0.05)
 
         time.sleep(5)

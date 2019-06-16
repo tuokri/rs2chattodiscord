@@ -3,39 +3,24 @@
 import argparse
 import configparser as cp
 import hashlib
-import logging
 import os
 import re
 import sys
 import time
-import multiprocessing as mp
-
 from collections import defaultdict
 from io import BytesIO
-from logging.handlers import RotatingFileHandler
 from urllib import parse
 
 import pycurl
 from bs4 import BeautifulSoup
 
+import logger
 from yaadiscord import YaaDiscord
 
-logger = logging.getLogger(__file__ + ":" + __name__)
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s:%(message)s")
-
-console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setLevel(logging.DEBUG)
-console_handler.setFormatter(formatter)
-logger.addHandler(console_handler)
-
-file_handler = RotatingFileHandler("rs2chattodiscord" + ".log", maxBytes=1024 * 1024 * 10, encoding="utf-8")
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+logger = logger.get_logger(__file__ + ":" + __name__)
 
 HEADERS = {}
-HEADERS_MAX_LEN = 500
+HEADERS_MAX_LEN = 50
 RUNNING = True
 MESSAGE_FORMAT = "({team}){emoji} **{username}**: {message}"
 NORTH_EMOJI = ":red_circle:"
@@ -258,6 +243,7 @@ def main():
         cfg["DISCORD"]["WEBHOOK_URL"] = os.environ["DISCORD_WEBHOOK_URL"]
         cfg["DISCORD"]["AVATAR_URL"] = os.environ["DISCORD_AVATAR_URL"]
         cfg["DISCORD"]["USER_AGENT"] = os.environ["DISCORD_USER_AGENT"]
+        cfg["MISC"]["CREATOR"] = os.environ["CREATOR"]
     else:
         cfg = read_config(args.config)
 
@@ -271,6 +257,7 @@ def main():
 
     username = cfg["RS2_WEBADMIN"]["USERNAME"]
     password = cfg["RS2_WEBADMIN"]["PASSWORD"]
+    creator = cfg["MISC"]["CREATOR"]
 
     yd = YaaDiscord(cfg["DISCORD"])
 
@@ -296,15 +283,28 @@ def main():
     logger.debug("authtimeout: %s", authtimeout)
     logger.info("authtimeout_value: %s", authtimeout_value)
 
+    c.close()
+
     t = time.time()
     while RUNNING:
         if auth_timed_out(t, int(authtimeout_value)):
             pass
 
+        c = pycurl.Curl()
+
         resp = get_messages(c, chat_data_url, sessionid, authcred, authtimeout)
         encoding = read_encoding(HEADERS, 2)
         parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
         divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
+
+        # TODO:
+        #  multiprocessing:
+        #  process1: read messages from RS2 WebAdmin and store them (producer).
+        #  process2: remove messages from storage and post them to webhook (consumer).
+
+        # TODO:
+        #  10 minute delay for posting to webhook.
+        #  Store messages in PostgreSQL DB (in Heroku)?
 
         for div in divs:
             logger.info("%s divs in parsed HTML", len(divs))
@@ -325,13 +325,20 @@ def main():
 
             chat_msg = MESSAGE_FORMAT.format(
                 team=team, emoji=emoji, username=name.text, message=msg.text)
+
             logger.info("Posting message: %s", chat_msg)
-            yd.post_chat_message(chat_msg)
+            success = yd.post_chat_message(chat_msg)
+            if not success:
+                logger.info("Failed to post message to webhook, retrying")
+                success = yd.retry_all_messages()
+                if not success:
+                    logger.error("Failed to retry")
+                    yd.post_chat_message(f"Mr. {creator}, I don't feel so good. (Error, check logs!)")
+
             time.sleep(0.05)
 
+        c.close()
         time.sleep(5)
-
-    c.close()
 
 
 if __name__ == "__main__":

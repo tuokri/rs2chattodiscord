@@ -37,7 +37,7 @@ logger.addHandler(file_handler)
 HEADERS = {}
 HEADERS_MAX_LEN = 500
 RUNNING = True
-MESSAGE_FORMAT = "({team}){emoji} {username}: {message}"
+MESSAGE_FORMAT = "({team}){emoji} **{username}**: {message}"
 NORTH_EMOJI = ":red_circle:"
 SOUTH_EMOJI = ":large_blue_circle:"
 

@@ -234,6 +234,10 @@ def get_messages(c, url, sessionid, authcred, authtimeout):
     return buffer.getvalue()
 
 
+def auth_timed_out(start_time, authtimeout):
+    pass
+
+
 def main():
     args = parse_args()
     cfg = defaultdict(dict)
@@ -284,17 +288,29 @@ def main():
     logger.debug("authcred: %s", authcred)
     logger.debug("authtimeout: %s", authtimeout)
 
+    t = time.time()
     while RUNNING:
+        if auth_timed_out(t, int(authtimeout.split("=")[1])):
+            logging.debug("timeout in secs: %s", int(authtimeout.split("=")[1]))
+
         resp = get_messages(c, chat_data_url, sessionid, authcred, authtimeout)
         encoding = read_encoding(HEADERS, 2)
         # print_headers(HEADERS)
         parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
-        print(parsed_html)
+        divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
 
-        if parsed_html:
-            print(parsed_html.find("div"))
+        for div in divs:
+            teamcolor = div.get("teamcolor")
+            teamnotice = div.get("teamnotice")
+            name = div.get("username")
+            msg = div.get("message")
 
-        time.sleep(10)
+            print(teamcolor, teamnotice, name, msg)
+
+            # yd.post_chat_message()
+            time.sleep(0.1)
+
+        time.sleep(5)
 
     c.close()
 

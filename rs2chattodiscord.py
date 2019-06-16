@@ -165,6 +165,8 @@ def post_login(c, url, sessionid, token, username, password, remember=2678400):
     postfields = (f"token={token}&password_hash=%24sha1%24{password_hash}"
                   + f"&username={username}&password=&remember={remember}")
 
+    logger.debug(postfields)
+
     c.setopt(c.WRITEFUNCTION, buffer.write)
     c.setopt(c.HEADERFUNCTION, header_function)
 

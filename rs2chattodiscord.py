@@ -273,6 +273,9 @@ def main():
     authcred = any(item.startswith("authcred=") for item in HEADERS["set-cookie"])
     authtimeout = any(item.startswith("authtimeout=") for item in HEADERS["set-cookie"])
 
+    authcred = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][0]
+    authtimeout = [i for i in HEADERS["set-cookie"] if i.startswith("authtimeout=")][0]
+
     print_headers(HEADERS)
     print("authcred:", authcred)
     print("authtimeout:", authtimeout)

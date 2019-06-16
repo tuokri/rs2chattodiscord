@@ -19,7 +19,7 @@ class YaaDiscord(object):
     def post_chat_message(self, msg):
         d = {
             "content": str(msg),
-            "username": self.config["USERNAME"],
-            "avatar_url": self.config["AVATAR_URL"],
+            # "username": self.config["USERNAME"],
+            # "avatar_url": self.config["AVATAR_URL"],
         }
         return self.post_webhook(d)

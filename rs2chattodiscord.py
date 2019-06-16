@@ -290,7 +290,11 @@ def main():
         # print_headers(HEADERS)
         parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
         print(parsed_html)
-        time.sleep(2)
+
+        if parsed_html:
+            print(parsed_html.find("div"))
+
+        time.sleep(10)
 
     c.close()
 

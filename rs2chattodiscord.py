@@ -284,14 +284,17 @@ def main():
     authcred = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][0]
     authtimeout = [i for i in HEADERS["set-cookie"] if i.startswith("authtimeout=")][0]
 
+    authtimeout_value = re.search('authtimeout="(.*)";', authtimeout).group(1)
+
     # print_headers(HEADERS)
     logger.debug("authcred: %s", authcred)
     logger.debug("authtimeout: %s", authtimeout)
+    logger.info("authtimeout_value: %s", authtimeout_value)
 
     t = time.time()
     while RUNNING:
-        if auth_timed_out(t, int(authtimeout.split("=")[1])):
-            logging.debug("timeout in secs: %s", int(authtimeout.split("=")[1]))
+        if auth_timed_out(t, int(authtimeout_value)):
+            pass
 
         resp = get_messages(c, chat_data_url, sessionid, authcred, authtimeout)
         encoding = read_encoding(HEADERS, 2)

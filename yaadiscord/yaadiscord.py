@@ -27,24 +27,24 @@ class YaaDiscord(object):
             "Content-Type": "application/json",
         })
         with request.urlopen(req) as resp:
-            logger.info("post_webhook(): %s", resp)
+            logger.info("send_request(): response: %s", resp.status)
 
     def retry_all_messages(self) -> bool:
         successful_retries = []
 
         for key, value in self.retries:
-            logger.info("Retrying id: %s", key)
+            logger.info("retry_all_messages(): retrying id: %s", key)
             retry_timeout_millis = value[0]
             time_of_request = value[1]
             data = value[2]
             if (time_of_request + retry_timeout_millis / 1000) > time.time():
                 if self.post_webhook(data):
-                    logger.info("Successfully retried id: %s", key)
+                    logger.info("retry_all_messages(): successfully retried id: %s", key)
                     successful_retries.append(key)
 
         for i in successful_retries:
             self.retries.pop(i)
-            logger.info("Popped id: %s from retry dict", i)
+            logger.info("retry_all_messages(): popped id: %s from retry dict", i)
 
         return bool(self.retries)
 

@@ -67,7 +67,7 @@ def parse_args():
 def header_function(header_line):
     global HEADERS
     if len(HEADERS) > HEADERS_MAX_LEN:
-        logging.info("Headers max length (%s) exceeded, resetting headers", HEADERS_MAX_LEN)
+        logger.info("Headers max length (%s) exceeded, resetting headers", HEADERS_MAX_LEN)
         HEADERS = {}
 
     # HTTP standard specifies that headers are encoded in iso-8859-1.
@@ -115,7 +115,7 @@ def read_encoding(headers, index):
         match = re.search(r"charset=(\S+)", content_type)
         if match:
             encoding = match.group(1)
-            logging.info("Decoding using %s", encoding)
+            logger.info("Decoding using %s", encoding)
     if encoding is None:
         # Default encoding for HTML is iso-8859-1.
         # Other content types may have different default encoding,

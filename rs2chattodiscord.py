@@ -283,6 +283,8 @@ def authenticate(login_url: str, username: str, password: str) -> AuthData:
     post_login(c, login_url, sessionid=sessionid,
                token=token, username=username, password=password)
 
+    print_headers(HEADERS)
+
     authcred = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][0]
     authtimeout = [i for i in HEADERS["set-cookie"] if i.startswith("authtimeout=")][0]
 

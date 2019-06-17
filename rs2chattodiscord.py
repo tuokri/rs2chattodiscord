@@ -84,7 +84,7 @@ def header_function(header_line):
             for k, v in HEADERS.items():
                 new_headers[k] = v[-1]
             HEADERS = new_headers
-            logger.info("Headers new length=%s", len(HEADERS))
+            logger.info("Headers 'connection' list new length=%s", len(HEADERS["connection"]))
     except KeyError as ke:
         logger.error("header_function(): error: %s", ke)
     except IndexError as ie:

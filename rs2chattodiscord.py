@@ -3,6 +3,7 @@
 import argparse
 import configparser as cp
 import hashlib
+import logging
 import multiprocessing as mp
 import os
 import re
@@ -18,7 +19,7 @@ from bs4 import BeautifulSoup
 import mplogger
 from yaadiscord import YaaDiscord
 
-logger = mplogger.get_logger(__file__ + ":" + __name__)
+logger = logging.getLogger(__file__ + ":" + __name__)
 
 HEADERS = {}
 HEADERS_MAX_LEN = 50

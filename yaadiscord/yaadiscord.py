@@ -1,10 +1,11 @@
 import json
+import logging
 import time
 from urllib import request
 from urllib.error import HTTPError
 from urllib.error import URLError
 
-import mplogger
+logger = logging.getLogger(__file__ + ":" + __name__)
 
 
 class YaaDiscord(object):

@@ -310,8 +310,10 @@ def find_sessionid(headers):
         else:
             logger.error("type(HEADERS['set-cookie']) == %s", type(headers["set-cookie"]))
             logger.error("cant get sessionid from headers")
+            return r
     except Exception as e:
         logger.error("find_sessionid(): error: %s", e, exc_info=True)
+        return r
 
     return f'sessionid="{r}";'
 
@@ -388,7 +390,8 @@ def rs2_webadmin_worker(queue: mp.Queue, log_queue: mp.Queue, login_url: str, ch
 
             latest_sessionid = find_sessionid(HEADERS)
             logger.info("rs2_webadmin_worker(): latest sessionid: %s", latest_sessionid)
-            auth_data.sessionid = latest_sessionid
+            if latest_sessionid:
+                auth_data.sessionid = latest_sessionid
             resp = get_messages(c, chat_url, auth_data.sessionid, auth_data.authcred, auth_data.timeout)
             encoding = read_encoding(HEADERS, -1)
             logger.info("rs2_webadmin_worker(): Encoding from headers: %s", encoding)

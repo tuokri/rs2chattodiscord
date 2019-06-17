@@ -309,6 +309,7 @@ def authenticate(login_url: str, username: str, password: str) -> AuthData:
     token = parsed_html.find("input", attrs={"name": "token"}).get("value")
     logger.debug("token: %s", token)
 
+    print_headers(HEADERS)
     sessionid = find_sessionid(HEADERS)
 
     logger.debug("authenticate(): got sessionid: %s, from headers", sessionid)

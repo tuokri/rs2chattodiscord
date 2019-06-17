@@ -356,7 +356,7 @@ def main():
         encoding = read_encoding(HEADERS, -1)
         parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
 
-        logger.debug("Raw HTML response: %s", parsed_html.text)
+        logger.debug("Raw HTML response: %s", parsed_html)
 
         chat_message_divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
         chat_notice_divs = parsed_html.find_all("div", attrs={"class": "chatnotice"})

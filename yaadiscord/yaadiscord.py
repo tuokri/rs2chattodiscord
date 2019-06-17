@@ -5,8 +5,6 @@ from urllib import request
 from urllib.error import HTTPError
 from urllib.error import URLError
 
-logger = logging.getLogger(__file__ + ":" + __name__)
-
 
 class YaaDiscord(object):
     def __init__(self, config: dict):
@@ -26,24 +24,24 @@ class YaaDiscord(object):
             "Content-Type": "application/json",
         })
         with request.urlopen(req) as resp:
-            logger.info("send_request(): response: %s", resp.status)
+            logging.info("send_request(): response: %s", resp.status)
 
     def retry_all_messages(self) -> bool:
         successful_retries = []
 
         for key, value in self.retries:
-            logger.info("retry_all_messages(): retrying id: %s", key)
+            logging.info("retry_all_messages(): retrying id: %s", key)
             retry_timeout_millis = value[0]
             time_of_request = value[1]
             data = value[2]
             if (time_of_request + retry_timeout_millis / 1000) > time.time():
                 if self.post_webhook(data):
-                    logger.info("retry_all_messages(): successfully retried id: %s", key)
+                    logging.info("retry_all_messages(): successfully retried id: %s", key)
                     successful_retries.append(key)
 
         for i in successful_retries:
             self.retries.pop(i)
-            logger.info("retry_all_messages(): popped id: %s from retry dict", i)
+            logging.info("retry_all_messages(): popped id: %s from retry dict", i)
 
         return bool(self.retries)
 
@@ -52,23 +50,23 @@ class YaaDiscord(object):
             self.send_request(data_dict)
             return True
         except HTTPError as he:
-            logger.error("post_webhook(): error: %s", he.code)
+            logging.error("post_webhook(): error: %s", he.code)
             if he.code == 429:
-                logger.error("post_webhook(): error: %s (rate limited)")
+                logging.error("post_webhook(): error: %s (rate limited)")
                 body = he.read().decode()
                 json_body = json.loads(body)
                 try:
                     retry_after = json_body["retry_after"]
                 except KeyError as ke:
-                    logger.error("post_webhook(): error: %s", ke)
+                    logging.error("post_webhook(): error: %s", ke)
                     retry_after = 0
                 i = self.next_id()
                 # Format: {id: (retry_timeout_ms, time_of_request, data)}
                 self.retries[i] = (retry_after, time.time(), data_dict)
-                logger.info("id: %s, retrying after: %s ms", i, retry_after)
+                logging.info("id: %s, retrying after: %s ms", i, retry_after)
                 return False
         except URLError as ue:
-            logger.error("post_webhook(): error: %s", ue.reason)
+            logging.error("post_webhook(): error: %s", ue.reason)
             return False
 
     def post_chat_message(self, msg: str) -> bool:

@@ -261,7 +261,7 @@ def authenticate(login_url: str, username: str, password: str) -> AuthData:
     c = pycurl.Curl()
 
     resp = get_login(c, login_url)
-    encoding = read_encoding(HEADERS, 0)
+    encoding = read_encoding(HEADERS, -1)
     parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
     token = parsed_html.find("input", attrs={"name": "token"}).get("value")
     logger.debug("token: %s", token)
@@ -349,7 +349,7 @@ def main():
         c = pycurl.Curl()
 
         resp = get_messages(c, chat_data_url, auth_data.sessionid, auth_data.authcred, auth_data.timeout)
-        encoding = read_encoding(HEADERS, 2)
+        encoding = read_encoding(HEADERS, -1)
         parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
         divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
 

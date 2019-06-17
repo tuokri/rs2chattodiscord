@@ -28,7 +28,7 @@ MESSAGE_FORMAT = "({team}){emoji} **{username}**: {message}"
 NOTICE_FORMAT = "**{message}**"
 NORTH_EMOJI = ":red_circle:"
 SOUTH_EMOJI = ":large_blue_circle:"
-DELAY_SECONDS = 10 * 60
+DELAY_SECONDS = 5 * 60
 
 
 class AuthData(object):
@@ -408,7 +408,7 @@ def rs2_webadmin_worker(queue: mp.Queue, log_queue: mp.Queue, login_url: str, ch
                 len(chat_notice_divs))
 
             for i, div in enumerate(chat_message_divs):
-                queue.put(div)
+                queue.put((div, time.time(), DELAY_SECONDS))
                 logger.info("rs2_webadmin_worker(): Enqueued div no. %s", i)
 
             c.close()
@@ -426,38 +426,56 @@ def discord_webhook_worker(queue: mp.Queue, log_queue: mp.Queue, yd: YaaDiscord)
 
     logger.info("Starting discord_webhook_worker pid: %s", os.getpid())
 
+    div = None
     while True:
-        div = queue.get()
-        logger.info("discord_webhook_worker(): dequeued div")
+        try:
+            div = queue.get()
+            logger.info("discord_webhook_worker(): dequeued div")
 
-        teamcolor = div.find("span", attrs={"class": "teamcolor"})
-        teamnotice = div.find("span", attrs={"class": "teamnotice"})
-        name = div.find("span", attrs={"class": "username"})
-        msg = div.find("span", attrs={"class": "message"})
+            teamcolor = div.find("span", attrs={"class": "teamcolor"})
+            teamnotice = div.find("span", attrs={"class": "teamnotice"})
+            name = div.find("span", attrs={"class": "username"})
+            msg = div.find("span", attrs={"class": "message"})
 
-        if teamnotice:
-            team = "TEAM"
-            if teamcolor.get("style") == "background: #E54927;":
-                emoji = NORTH_EMOJI
+            if teamnotice:
+                team = "TEAM"
+                if teamcolor.get("style") == "background: #E54927;":
+                    emoji = NORTH_EMOJI
+                else:
+                    emoji = SOUTH_EMOJI
             else:
-                emoji = SOUTH_EMOJI
-        else:
-            team = "ALL"
-            emoji = ""
+                team = "ALL"
+                emoji = ""
 
-        chat_msg = MESSAGE_FORMAT.format(
-            team=team, emoji=emoji, username=name.text, message=msg.text)
-        logger.info("discord_webhook_worker(): Posting message: %s", chat_msg)
-        success = yd.post_chat_message(chat_msg)
-        if not success:
-            logger.error("discord_webhook_worker(): Failed to post message to webhook, retrying")
-            success = yd.retry_all_messages()
+            chat_msg = MESSAGE_FORMAT.format(
+                team=team, emoji=emoji, username=name.text, message=msg.text)
+            logger.info("discord_webhook_worker(): Posting message: %s", chat_msg)
+            success = yd.post_chat_message(chat_msg)
             if not success:
-                logger.error("discord_webhook_worker(): Failed to retry")
-                # Refactor accessing yd.config here.
-                yd.post_chat_message(
-                    f"Mr. {yd.config['CREATOR']}, I don't feel so good. (Error! Check logs!)")
-        time.sleep(0.05)
+                logger.error("discord_webhook_worker(): Failed to post message to webhook, retrying")
+                success = yd.retry_all_messages()
+                if not success:
+                    logger.error("discord_webhook_worker(): Failed to retry")
+                    # Refactor accessing yd.config here.
+                    yd.post_chat_message(
+                        f"Mr. {yd.config['CREATOR']}, I don't feel so good. (Error! Check logs!)")
+            time.sleep(0.05)
+        except Exception as e:
+            logger.error("discord_webhook_worker(): error: %s", e, exc_info=True)
+            if div:
+                logger.error("discord_webhook_worker(): might lose message: %s", div.text)
+
+
+def queue_worker(delayed_queue: mp.Queue, out_queue: mp.Queue, log_queue: mp.Queue):
+    mplogger.worker_configurer(log_queue)
+    # noinspection PyShadowingNames
+    logger = logging.getLogger(__file__ + ":" + __name__)
+
+    logger.info("Starting discord_webhook_worker pid: %s", os.getpid())
+
+    while True:
+        logger.info("hello from queue_worker: %s", time.time())
+        time.sleep(5)
 
 
 # TODO:
@@ -502,12 +520,15 @@ def main():
 
     yd = YaaDiscord(cfg["DISCORD"])
 
+    delayed_queue = mp.Queue()
     queue = mp.Queue()
     processes = [
         mp.Process(target=rs2_webadmin_worker, name="rs2_webadmin_worker",
-                   args=(queue, lqueue, login_url, chat_data_url, username, password)),
+                   args=(delayed_queue, lqueue, login_url, chat_data_url, username, password)),
         mp.Process(target=discord_webhook_worker, name="discord_webhook_worker",
                    args=(queue, lqueue, yd)),
+        mp.Process(target=queue_worker, name="queue_worker",
+                   args=(delayed_queue, queue, lqueue))
     ]
 
     for p in processes:

@@ -152,6 +152,8 @@ def read_encoding(headers: dict, index: int) -> str:
 
 
 def get_login(c: pycurl.Curl, url: str) -> bytes:
+    logger.info("get_login() called")
+
     buffer = BytesIO()
 
     header = [
@@ -185,6 +187,8 @@ def get_login(c: pycurl.Curl, url: str) -> bytes:
 def post_login(c: pycurl.Curl, url: str, sessionid: str, token: str, username: str, password: str,
                remember=0) -> bytes:
     # r=2678400
+    logger.info("post_login() called")
+
     buffer = BytesIO()
 
     header = [
@@ -229,6 +233,8 @@ def post_login(c: pycurl.Curl, url: str, sessionid: str, token: str, username: s
 
 
 def get_messages(c: pycurl.Curl, url: str, sessionid: str, authcred: str, authtimeout: int) -> bytes:
+    logger.info("get_messages() called")
+
     buffer = BytesIO()
 
     header = [

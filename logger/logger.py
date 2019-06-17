@@ -4,6 +4,8 @@ import multiprocessing as mp
 
 from logging.handlers import RotatingFileHandler
 
+LOGGER_LOCK = mp.Lock()
+
 
 def debug_with_lock(self, msg, *args, **kwargs):
     with self.__mp_custom_lock:
@@ -20,7 +22,9 @@ def error_with_lock(self, msg, *args, **kwargs):
         self.error(self, msg, *args, **kwargs)
 
 
-def get_logger(name: str, lock: mp.Lock) -> logging.Logger:
+def get_logger(name: str, lock=LOGGER_LOCK) -> logging.Logger:
+    print("get_logger(): LOGGER_LOCK id: %s", id(LOGGER_LOCK))
+
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s:%(message)s")

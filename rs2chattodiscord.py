@@ -18,8 +18,7 @@ from bs4 import BeautifulSoup
 import logger
 from yaadiscord import YaaDiscord
 
-LOGGER_LOCK = mp.Lock()
-logger = logger.get_logger(__file__ + ":" + __name__, LOGGER_LOCK)
+logger = logger.get_logger(__file__ + ":" + __name__)
 
 HEADERS = {}
 HEADERS_MAX_LEN = 50

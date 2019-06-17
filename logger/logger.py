@@ -1,25 +1,28 @@
 import logging
-import sys
 import multiprocessing as mp
-
+import sys
+from logging import NOTSET
 from logging.handlers import RotatingFileHandler
 
 LOGGER_LOCK = mp.Lock()
 
 
-def debug_with_lock(self, msg, *args, **kwargs):
-    with self.__mp_custom_lock:
-        self.debug(self, msg, *args, **kwargs)
+class LockingLogger(logging.Logger):
+    def __init__(self, name, level=NOTSET):
+        logging.Logger.__init__(self, name, level=NOTSET)
+        self.__mp_custom_lock = LOGGER_LOCK
 
+    def debug_with_lock(self, msg, *args, **kwargs):
+        with self.__mp_custom_lock:
+            self.debug(self, msg, *args, **kwargs)
 
-def info_with_lock(self, msg, *args, **kwargs):
-    with self.__mp_custom_lock:
-        self.info(self, msg, *args, **kwargs)
+    def info_with_lock(self, msg, *args, **kwargs):
+        with self.__mp_custom_lock:
+            self.info(self, msg, *args, **kwargs)
 
-
-def error_with_lock(self, msg, *args, **kwargs):
-    with self.__mp_custom_lock:
-        self.error(self, msg, *args, **kwargs)
+    def error_with_lock(self, msg, *args, **kwargs):
+        with self.__mp_custom_lock:
+            self.error(self, msg, *args, **kwargs)
 
 
 def get_logger(name: str, lock=LOGGER_LOCK) -> logging.Logger:
@@ -40,8 +43,8 @@ def get_logger(name: str, lock=LOGGER_LOCK) -> logging.Logger:
     logger.addHandler(file_handler)
 
     logger.__mp_custom_lock = lock
-    logger.debug = debug_with_lock
-    logger.info = info_with_lock
-    logger.error = error_with_lock
+    logger.debug = LockingLogger.debug_with_lock
+    logger.info = LockingLogger.info_with_lock
+    logger.error = LockingLogger.error_with_lock
 
     return logger

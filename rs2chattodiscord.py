@@ -3,6 +3,7 @@
 import argparse
 import configparser as cp
 import hashlib
+import multiprocessing as mp
 import os
 import re
 import sys
@@ -23,6 +24,7 @@ HEADERS = {}
 HEADERS_MAX_LEN = 50
 RUNNING = True
 MESSAGE_FORMAT = "({team}){emoji} **{username}**: {message}"
+NOTICE_FORMAT = "**{message}**"
 NORTH_EMOJI = ":red_circle:"
 SOUTH_EMOJI = ":large_blue_circle:"
 
@@ -297,16 +299,103 @@ def auth_timed_out(start_time, timeout):
     return False
 
 
-def rs2_webadmin_worker():
+def rs2_webadmin_worker(queue: mp.Queue, lock: mp.Lock, login_url: str, chat_url: str,
+                        username: str, password: str):
+    with lock:
+        logger.info("Starting rs2_webadmin_worker pid: %s", os.getpid())
+
+    auth_data = authenticate(login_url, username, password)
+    t = time.time()
+
     while True:
-        pass
+        if auth_timed_out(t, auth_data.timeout):
+            with lock:
+                logger.info("rs2_webadmin_worker(): Re-authenticating")
+            auth_data = authenticate(login_url, username, password)
+            t = time.time()
+
+        c = pycurl.Curl()
+
+        resp = get_messages(c, chat_url, auth_data.sessionid, auth_data.authcred, auth_data.timeout)
+        encoding = read_encoding(HEADERS, -1)
+        with lock:
+            logger.info("rs2_webadmin_worker(): Encoding from headers: %s", encoding)
+        parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
+        with lock:
+            logger.debug("rs2_webadmin_worker(): Raw HTML response: %s", parsed_html)
+        chat_message_divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
+        chat_notice_divs = parsed_html.find_all("div", attrs={"class": "chatnotice"})
+        with lock:
+            logger.info(
+                "rs2_webadmin_worker(): Got %s 'class=chatmessage' divs from WebAdmin",
+                len(chat_message_divs))
+            logger.info(
+                "rs2_webadmin_worker(): Got %s 'class=chatnotice' divs from WebAdmin",
+                len(chat_notice_divs))
+
+        for i, div in enumerate(chat_message_divs):
+            queue.put(div)
+            with lock:
+                logger.info("rs2_webadmin_worker(): Enqueued div no. %s", i)
+
+        c.close()
+        time.sleep(5)
 
 
-def discord_webhook_worker():
+def discord_webhook_worker(queue: mp.Queue, lock: mp.Lock, yd: YaaDiscord):
+    with lock:
+        logger.info("Starting discord_webhook_worker pid: %s", os.getpid())
+
     while True:
-        pass
+        div = queue.get()
+        with lock:
+            logger.info("discord_webhook_worker(): dequeued div")
+
+        teamcolor = div.find("span", attrs={"class": "teamcolor"})
+        teamnotice = div.find("span", attrs={"class": "teamnotice"})
+        name = div.find("span", attrs={"class": "username"})
+        msg = div.find("span", attrs={"class": "message"})
+
+        if teamnotice:
+            team = "TEAM"
+            if teamcolor.get("style") == "background: #E54927;":
+                emoji = NORTH_EMOJI
+            else:
+                emoji = SOUTH_EMOJI
+        else:
+            team = "ALL"
+            emoji = ""
+
+        chat_msg = MESSAGE_FORMAT.format(
+            team=team, emoji=emoji, username=name.text, message=msg.text)
+
+        with lock:
+            logger.info("discord_webhook_worker(): Posting message: %s", chat_msg)
+        success = yd.post_chat_message(chat_msg)
+        if not success:
+            with lock:
+                logger.error("discord_webhook_worker(): Failed to post message to webhook, retrying")
+            success = yd.retry_all_messages()
+            if not success:
+                with lock:
+                    logger.error("discord_webhook_worker(): Failed to retry")
+                # Refactor accessing yd.config here.
+                yd.post_chat_message(
+                    f"Mr. {yd.config['CREATOR']}, I don't feel so good. (Error! Check logs!)")
+        time.sleep(0.05)
 
 
+# TODO:
+#  multiprocessing:
+#  process1: read messages from RS2 WebAdmin and enqueue them (producer).
+#  process2: dequeue messages and post them to webhook (consumer).
+
+# TODO:
+#  10 minute delay for posting to webhook.
+#  Store messages in PostgreSQL DB (in Heroku)?
+
+# TODO:
+#  Refactor logging in Processes (with lock) -> dedicated process-logging-function.
 def main():
     args = parse_args()
     cfg = defaultdict(dict)
@@ -322,7 +411,7 @@ def main():
         cfg["DISCORD"]["WEBHOOK_URL"] = os.environ["DISCORD_WEBHOOK_URL"]
         cfg["DISCORD"]["AVATAR_URL"] = os.environ["DISCORD_AVATAR_URL"]
         cfg["DISCORD"]["USER_AGENT"] = os.environ["DISCORD_USER_AGENT"]
-        cfg["MISC"]["CREATOR"] = os.environ["CREATOR"]
+        cfg["DISCORD"]["CREATOR"] = os.environ["CREATOR"]
         cfg["MISC"]["DATABASE_URL"] = os.environ["DATABASE_URL"]
     else:
         cfg = read_config(args.config)
@@ -338,73 +427,27 @@ def main():
 
     username = cfg["RS2_WEBADMIN"]["USERNAME"]
     password = cfg["RS2_WEBADMIN"]["PASSWORD"]
-    creator = cfg["MISC"]["CREATOR"]
 
     yd = YaaDiscord(cfg["DISCORD"])
 
-    auth_data = authenticate(login_url, username, password)
-    t = time.time()
-    while RUNNING:
-        if auth_timed_out(t, auth_data.timeout):
-            logger.info("Re-authenticating")
-            auth_data = authenticate(login_url, username, password)
-            t = time.time()
+    queue = mp.Queue()
+    lock = mp.Lock()
+    processes = [
+        mp.Process(target=rs2_webadmin_worker,
+                   args=(queue, lock, login_url, chat_data_url, username, password)),
+        mp.Process(target=discord_webhook_worker,
+                   args=(queue, lock, yd)),
+    ]
 
-        c = pycurl.Curl()
+    for p in processes:
+        p.start()
+        with lock:
+            logger.info("Started Process: %s", p)
 
-        resp = get_messages(c, chat_data_url, auth_data.sessionid, auth_data.authcred, auth_data.timeout)
-        encoding = read_encoding(HEADERS, -1)
-        parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
-
-        logger.debug("Raw HTML response: %s", parsed_html)
-
-        chat_message_divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
-        chat_notice_divs = parsed_html.find_all("div", attrs={"class": "chatnotice"})
-        logger.info("Got %s 'class=chatmessage' chat_message_divs from WebAdmin", len(chat_message_divs))
-        logger.info("Got %s 'class=chatnotice' chat_message_divs from WebAdmin", len(chat_notice_divs))
-
-        # TODO:
-        #  multiprocessing:
-        #  process1: read messages from RS2 WebAdmin and enqueue them (producer).
-        #  process2: dequeue messages and post them to webhook (consumer).
-
-        # TODO:
-        #  10 minute delay for posting to webhook.
-        #  Store messages in PostgreSQL DB (in Heroku)?
-
-        for div in chat_message_divs:
-            logger.info("%s chat_message_divs in parsed HTML", len(chat_message_divs))
-            teamcolor = div.find("span", attrs={"class": "teamcolor"})
-            teamnotice = div.find("span", attrs={"class": "teamnotice"})
-            name = div.find("span", attrs={"class": "username"})
-            msg = div.find("span", attrs={"class": "message"})
-
-            if teamnotice:
-                team = "TEAM"
-                if teamcolor.get("style") == "background: #E54927;":
-                    emoji = NORTH_EMOJI
-                else:
-                    emoji = SOUTH_EMOJI
-            else:
-                team = "ALL"
-                emoji = ""
-
-            chat_msg = MESSAGE_FORMAT.format(
-                team=team, emoji=emoji, username=name.text, message=msg.text)
-
-            logger.info("Posting message: %s", chat_msg)
-            success = yd.post_chat_message(chat_msg)
-            if not success:
-                logger.error("Failed to post message to webhook, retrying")
-                success = yd.retry_all_messages()
-                if not success:
-                    logger.error("Failed to retry")
-                    yd.post_chat_message(f"Mr. {creator}, I don't feel so good. (Error! Check logs!)")
-
-            time.sleep(0.05)
-
-        c.close()
-        time.sleep(5)
+    for p in processes:
+        p.join()
+        with lock:
+            logger.info("Joined Process: %s", p)
 
 
 if __name__ == "__main__":

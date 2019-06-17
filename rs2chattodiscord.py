@@ -90,9 +90,9 @@ def header_function(header_line):
             logger.info("Headers 'connection' %s new length=%s",
                         type(HEADERS["connection"]), len(HEADERS["connection"]))
     except KeyError as ke:
-        logger.error("header_function(): error: %s", ke)
+        logger.error("header_function(): error: %s", ke, exc_info=True)
     except IndexError as ie:
-        logger.error("header_function(): error: %s", ie)
+        logger.error("header_function(): error: %s", ie, exc_info=True)
 
     # HTTP standard specifies that headers are encoded in iso-8859-1.
     header_line = header_line.decode("iso-8859-1")
@@ -413,7 +413,7 @@ def main():
     try:
         cfg["RS2_WEBADMIN"]["ADDRESS"] = validate_address(cfg["RS2_WEBADMIN"]["ADDRESS"])
     except ValueError as ve:
-        logger.error("Error: %s", ve)
+        logger.error("Error: %s", ve, exc_info=True)
         sys.exit(1)
 
     login_url = parse.urljoin(cfg["RS2_WEBADMIN"]["ADDRESS"], cfg["RS2_WEBADMIN"]["LOGIN_PATH"])

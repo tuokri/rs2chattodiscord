@@ -14,15 +14,15 @@ class LockingLogger(logging.Logger):
 
     def debug_with_lock(self, msg, *args, **kwargs):
         with self.__mp_custom_lock:
-            self.debug(self, msg, *args, **kwargs)
+            self.debug(msg, *args, **kwargs)
 
     def info_with_lock(self, msg, *args, **kwargs):
         with self.__mp_custom_lock:
-            self.info(self, msg, *args, **kwargs)
+            self.info(msg, *args, **kwargs)
 
     def error_with_lock(self, msg, *args, **kwargs):
         with self.__mp_custom_lock:
-            self.error(self, msg, *args, **kwargs)
+            self.error(msg, *args, **kwargs)
 
 
 def get_logger(name: str, lock=LOGGER_LOCK) -> logging.Logger:

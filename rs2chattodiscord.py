@@ -271,6 +271,8 @@ def get_messages(c: pycurl.Curl, url: str, sessionid: str, authcred: str, authti
     c.setopt(c.TCP_KEEPALIVE, 1)
     c.setopt(c.FOLLOWLOCATION, True)
 
+    print_headers(HEADERS)
+
     c.perform()
     logger.info("get_messages() HTTP response: %s", c.getinfo(c.HTTP_CODE))
     return buffer.getvalue()
@@ -286,7 +288,18 @@ def authenticate(login_url: str, username: str, password: str) -> AuthData:
     parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
     token = parsed_html.find("input", attrs={"name": "token"}).get("value")
     logger.debug("token: %s", token)
-    sessionid = HEADERS["set-cookie"].split(";")[0]
+
+    if type(HEADERS["set-cookie"]) == str:
+        logger.info("type(HEADERS['set-cookie']) == str")
+        sessionid = HEADERS["set-cookie"].split(";")[0]
+    elif type(HEADERS["set-cookie"]) == str:
+        logger.info("type(HEADERS['set-cookie']) == list")
+        sessionid = HEADERS["set-cookie"][-1].split(";")[0]
+    else:
+        logger.error("type(HEADERS['set-cookie']) == %s", type(HEADERS["set-cookie"]))
+        logger.error("cant get sessionid from headers")
+        sessionid = ""
+
     logger.debug("authenticate(): got sessionid: %s, from headers", sessionid)
 
     post_login(c, login_url, sessionid=sessionid,
@@ -342,7 +355,7 @@ def rs2_webadmin_worker(queue: mp.Queue, log_queue: mp.Queue, login_url: str, ch
 
         c = pycurl.Curl()
 
-        latest_sessionid = sessionid = HEADERS["set-cookie"].split(";")[0]
+        latest_sessionid = HEADERS["set-cookie"].split(";")[0]
         logger.info("rs2_webadmin_worker(): lastest sessionid: %s", latest_sessionid)
         resp = get_messages(c, chat_url, auth_data.sessionid, auth_data.authcred, auth_data.timeout)
         encoding = read_encoding(HEADERS, -1)

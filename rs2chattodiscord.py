@@ -208,6 +208,8 @@ def post_login(c: pycurl.Curl, url: str, sessionid: str, token: str, username: s
 
     postfields = (f"token={token}&password_hash=%24sha1%24{password_hash}"
                   + f"&username={username}&password=&remember={remember}")
+    postfieldsize = len(postfields)
+    logger.info("postfieldsize: %s", postfields)
 
     logger.debug("postfields: %s", postfields)
 
@@ -217,7 +219,7 @@ def post_login(c: pycurl.Curl, url: str, sessionid: str, token: str, username: s
     c.setopt(c.BUFFERSIZE, 102400)
     c.setopt(c.URL, url)
     c.setopt(c.POSTFIELDS, postfields)
-    c.setopt(c.POSTFIELDSIZE_LARGE, len(postfields))
+    c.setopt(c.POSTFIELDSIZE_LARGE, postfieldsize)
     c.setopt(c.HTTPHEADER, header)
     c.setopt(c.USERAGENT, "curl/7.65.1")
     c.setopt(c.MAXREDIRS, 50)
@@ -251,6 +253,8 @@ def get_messages(c: pycurl.Curl, url: str, sessionid: str, authcred: str, authti
     ]
 
     postfields = "ajax=1"
+    postfieldsize = len(postfields)
+    logger.info("postfieldsize: %s", postfields)
 
     c.setopt(c.WRITEFUNCTION, buffer.write)
     c.setopt(c.HEADERFUNCTION, header_function)
@@ -258,7 +262,7 @@ def get_messages(c: pycurl.Curl, url: str, sessionid: str, authcred: str, authti
     c.setopt(c.BUFFERSIZE, 102400)
     c.setopt(c.URL, url)
     c.setopt(c.POSTFIELDS, postfields)
-    c.setopt(c.POSTFIELDSIZE_LARGE, len(postfields))
+    c.setopt(c.POSTFIELDSIZE_LARGE, postfieldsize)
     c.setopt(c.HTTPHEADER, header)
     c.setopt(c.USERAGENT, "curl/7.65.1")
     c.setopt(c.MAXREDIRS, 50)

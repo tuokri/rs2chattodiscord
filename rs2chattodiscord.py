@@ -316,6 +316,8 @@ def auth_timed_out(start_time, timeout):
 def rs2_webadmin_worker(queue: mp.Queue, log_queue: mp.Queue, login_url: str, chat_url: str,
                         username: str, password: str):
     mplogger.worker_configurer(log_queue)
+    # noinspection PyShadowingNames
+    logger = logging.getLogger(__file__ + ":" + __name__)
 
     logger.info("Starting rs2_webadmin_worker pid: %s", os.getpid())
     auth_data = authenticate(login_url, username, password)
@@ -356,6 +358,8 @@ def rs2_webadmin_worker(queue: mp.Queue, log_queue: mp.Queue, login_url: str, ch
 
 def discord_webhook_worker(queue: mp.Queue, log_queue: mp.Queue, yd: YaaDiscord):
     mplogger.worker_configurer(log_queue)
+    # noinspection PyShadowingNames
+    logger = logging.getLogger(__file__ + ":" + __name__)
 
     logger.info("Starting discord_webhook_worker pid: %s", os.getpid())
 

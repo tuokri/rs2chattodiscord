@@ -185,8 +185,7 @@ def get_login(c: pycurl.Curl, url: str) -> bytes:
 
 
 def post_login(c: pycurl.Curl, url: str, sessionid: str, token: str, username: str, password: str,
-               remember=0) -> bytes:
-    # r=2678400
+               remember=2678400) -> bytes:
     logger.info("post_login() called")
 
     buffer = BytesIO()

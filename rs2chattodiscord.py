@@ -10,6 +10,7 @@ import re
 import sys
 import time
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 from urllib import parse
 
@@ -466,16 +467,31 @@ def discord_webhook_worker(queue: mp.Queue, log_queue: mp.Queue, yd: YaaDiscord)
                 logger.error("discord_webhook_worker(): might lose message: %s", div.text)
 
 
+def sleep_and_put(div, start_time, delay, out_queue):
+    duration = delay - (time.time() - start_time)
+    logger.info("sleep_and_put(): sleeping for %s seconds", duration)
+    time.sleep(duration)
+    logger.info("sleep_and_put(): putting item into queue")
+    out_queue.put(div)
+
+
 def queue_worker(delayed_queue: mp.Queue, out_queue: mp.Queue, log_queue: mp.Queue):
     mplogger.worker_configurer(log_queue)
     # noinspection PyShadowingNames
     logger = logging.getLogger(__file__ + ":" + __name__)
 
-    logger.info("Starting discord_webhook_worker pid: %s", os.getpid())
+    logger.info("Starting queue_worker pid: %s", os.getpid())
 
+    executor = ThreadPoolExecutor(max_workers=25)
+    futures = []
     while True:
-        logger.info("hello from queue_worker: %s", time.time())
-        time.sleep(5)
+        div, start_time, delay = delayed_queue.get()
+        logger.info("queue_worker(): got div with start_time: %s, delay: %s",
+                    start_time, delay)
+        futures.append(executor.submit(sleep_and_put, div, start_time, delay, out_queue))
+        for f in futures:
+            if f.done():
+                logger.info("future done: %s, result: %s", f, f.result())
 
 
 # TODO:

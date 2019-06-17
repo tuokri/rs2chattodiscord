@@ -286,7 +286,7 @@ def authenticate(login_url: str, username: str, password: str) -> AuthData:
 
 def auth_timed_out(start_time, timeout):
     time_now = time.time()
-    if (start_time + timeout) > time_now:
+    if (start_time + timeout) < time_now:
         logger.info("Authentication timed out for start_time=%s, timeout=%s, time_now=%s",
                     start_time, timeout, time_now)
         return True

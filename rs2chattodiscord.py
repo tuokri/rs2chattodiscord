@@ -315,6 +315,9 @@ def find_sessionid(headers):
             logger.error("type(HEADERS['set-cookie']) == %s", type(headers["set-cookie"]))
             logger.error("cant get sessionid from headers")
             return r
+    except AttributeError as ae:
+        logger.error("find_sessionid(): error: %s", ae)
+        return r
     except Exception as e:
         logger.error("find_sessionid(): error: %s", e, exc_info=True)
         return r
@@ -391,6 +394,8 @@ def rs2_webadmin_worker(delayed_queue: mp.Queue, instant_queue: mp.Queue, log_qu
     auth_data = authenticate(login_url, username, password)
     t = time.time()
 
+    last_ping_time = time.time()
+
     while True:
         try:
             if auth_timed_out(t, auth_data.timeout):
@@ -425,13 +430,14 @@ def rs2_webadmin_worker(delayed_queue: mp.Queue, instant_queue: mp.Queue, log_qu
                     logger.info("rs2_webadmin_worker(): detected !admin ping")
                     instant_queue.put(div)
                     logger.info("rs2_webadmin_worker(): Enqueued div no. %s in instant queue", i)
-
                     ping_div = BeautifulSoup(f"""<div class="chatmessage">
                         <span class="teamcolor" style="background: #E54927;">&#160;</span>
                         <span class="username">__RADIOMAN__</span>:
-                        <span class="message">__ADMIN SUMMONED INGAME__ by: {name}! {PING_HC} {PING_PO}</span>
+                        <span class="message">__ADMIN SUMMONED INGAME__ by: {name}! {PING_HC} {PING_PO} '{msg.text}'</span>
                         </div>""", features="html.parser")
-                    instant_queue.put(ping_div)
+                    if time.time() > (last_ping_time + (60 * 15)):
+                        instant_queue.put(ping_div)
+                        last_ping_time = time.time()
                     logger.info("rs2_webadmin_worker(): Enqueued ping_div no. %s in instant queue", i)
                 else:
                     delayed_queue.put((div, time.time(), DELAY_SECONDS))

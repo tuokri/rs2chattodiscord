@@ -18,7 +18,8 @@ from bs4 import BeautifulSoup
 import logger
 from yaadiscord import YaaDiscord
 
-logger = logger.get_logger(__file__ + ":" + __name__)
+LOGGER_LOCK = mp.Lock()
+logger = logger.get_logger(__file__ + ":" + __name__, LOGGER_LOCK)
 
 HEADERS = {}
 HEADERS_MAX_LEN = 50
@@ -27,6 +28,7 @@ MESSAGE_FORMAT = "({team}){emoji} **{username}**: {message}"
 NOTICE_FORMAT = "**{message}**"
 NORTH_EMOJI = ":red_circle:"
 SOUTH_EMOJI = ":large_blue_circle:"
+DELAY_SECONDS = 10 * 60
 
 
 class AuthData(object):
@@ -180,7 +182,8 @@ def get_login(c: pycurl.Curl, url: str) -> bytes:
 
 
 def post_login(c: pycurl.Curl, url: str, sessionid: str, token: str, username: str, password: str,
-               remember=2678400) -> bytes:
+               remember=15) -> bytes:
+    # r=2678400
     buffer = BytesIO()
 
     header = [
@@ -272,6 +275,7 @@ def authenticate(login_url: str, username: str, password: str) -> AuthData:
     token = parsed_html.find("input", attrs={"name": "token"}).get("value")
     logger.debug("token: %s", token)
     sessionid = HEADERS["set-cookie"].split(";")[0]
+    logger.debug("authenticate(): got sessionid: %s, from headers", sessionid)
 
     post_login(c, login_url, sessionid=sessionid,
                token=token, username=username, password=password)
@@ -287,7 +291,8 @@ def authenticate(login_url: str, username: str, password: str) -> AuthData:
     logger.info("authtimeout_value: %s", authtimeout_value)
 
     c.close()
-    return AuthData(timeout=authtimeout_value, authcred=authcred, sessionid=sessionid, authtimeout=authtimeout)
+    return AuthData(timeout=authtimeout_value, authcred=authcred, sessionid=sessionid,
+                    authtimeout=authtimeout)
 
 
 def auth_timed_out(start_time, timeout):
@@ -299,57 +304,51 @@ def auth_timed_out(start_time, timeout):
     return False
 
 
-def rs2_webadmin_worker(queue: mp.Queue, lock: mp.Lock, login_url: str, chat_url: str,
+def rs2_webadmin_worker(queue: mp.Queue, login_url: str, chat_url: str,
                         username: str, password: str):
-    with lock:
-        logger.info("Starting rs2_webadmin_worker pid: %s", os.getpid())
-
+    logger.info("Starting rs2_webadmin_worker pid: %s", os.getpid())
     auth_data = authenticate(login_url, username, password)
     t = time.time()
 
     while True:
         if auth_timed_out(t, auth_data.timeout):
-            with lock:
-                logger.info("rs2_webadmin_worker(): Re-authenticating")
+            logger.info("rs2_webadmin_worker(): Re-authenticating")
             auth_data = authenticate(login_url, username, password)
             t = time.time()
 
         c = pycurl.Curl()
 
+        latest_sessionid = sessionid = HEADERS["set-cookie"].split(";")[0]
+        logger.info("rs2_webadmin_worker(): lastest sessionid: %s", latest_sessionid)
         resp = get_messages(c, chat_url, auth_data.sessionid, auth_data.authcred, auth_data.timeout)
         encoding = read_encoding(HEADERS, -1)
-        with lock:
-            logger.info("rs2_webadmin_worker(): Encoding from headers: %s", encoding)
+        logger.info("rs2_webadmin_worker(): Encoding from headers: %s", encoding)
         parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
-        with lock:
-            logger.debug("rs2_webadmin_worker(): Raw HTML response: %s", parsed_html)
+        logger.debug("rs2_webadmin_worker(): Raw HTML response: %s", parsed_html)
         chat_message_divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
         chat_notice_divs = parsed_html.find_all("div", attrs={"class": "chatnotice"})
-        with lock:
-            logger.info(
-                "rs2_webadmin_worker(): Got %s 'class=chatmessage' divs from WebAdmin",
-                len(chat_message_divs))
-            logger.info(
-                "rs2_webadmin_worker(): Got %s 'class=chatnotice' divs from WebAdmin",
-                len(chat_notice_divs))
+
+        logger.info(
+            "rs2_webadmin_worker(): Got %s 'class=chatmessage' divs from WebAdmin",
+            len(chat_message_divs))
+        logger.info(
+            "rs2_webadmin_worker(): Got %s 'class=chatnotice' divs from WebAdmin",
+            len(chat_notice_divs))
 
         for i, div in enumerate(chat_message_divs):
             queue.put(div)
-            with lock:
-                logger.info("rs2_webadmin_worker(): Enqueued div no. %s", i)
+            logger.info("rs2_webadmin_worker(): Enqueued div no. %s", i)
 
         c.close()
         time.sleep(5)
 
 
-def discord_webhook_worker(queue: mp.Queue, lock: mp.Lock, yd: YaaDiscord):
-    with lock:
-        logger.info("Starting discord_webhook_worker pid: %s", os.getpid())
+def discord_webhook_worker(queue: mp.Queue, yd: YaaDiscord):
+    logger.info("Starting discord_webhook_worker pid: %s", os.getpid())
 
     while True:
         div = queue.get()
-        with lock:
-            logger.info("discord_webhook_worker(): dequeued div")
+        logger.info("discord_webhook_worker(): dequeued div")
 
         teamcolor = div.find("span", attrs={"class": "teamcolor"})
         teamnotice = div.find("span", attrs={"class": "teamnotice"})
@@ -368,17 +367,13 @@ def discord_webhook_worker(queue: mp.Queue, lock: mp.Lock, yd: YaaDiscord):
 
         chat_msg = MESSAGE_FORMAT.format(
             team=team, emoji=emoji, username=name.text, message=msg.text)
-
-        with lock:
-            logger.info("discord_webhook_worker(): Posting message: %s", chat_msg)
+        logger.info("discord_webhook_worker(): Posting message: %s", chat_msg)
         success = yd.post_chat_message(chat_msg)
         if not success:
-            with lock:
-                logger.error("discord_webhook_worker(): Failed to post message to webhook, retrying")
+            logger.error("discord_webhook_worker(): Failed to post message to webhook, retrying")
             success = yd.retry_all_messages()
             if not success:
-                with lock:
-                    logger.error("discord_webhook_worker(): Failed to retry")
+                logger.error("discord_webhook_worker(): Failed to retry")
                 # Refactor accessing yd.config here.
                 yd.post_chat_message(
                     f"Mr. {yd.config['CREATOR']}, I don't feel so good. (Error! Check logs!)")
@@ -431,23 +426,20 @@ def main():
     yd = YaaDiscord(cfg["DISCORD"])
 
     queue = mp.Queue()
-    lock = mp.Lock()
     processes = [
         mp.Process(target=rs2_webadmin_worker,
-                   args=(queue, lock, login_url, chat_data_url, username, password)),
+                   args=(queue, login_url, chat_data_url, username, password)),
         mp.Process(target=discord_webhook_worker,
-                   args=(queue, lock, yd)),
+                   args=(queue, yd)),
     ]
 
     for p in processes:
         p.start()
-        with lock:
-            logger.info("Started Process: %s", p)
+        logger.info("Started Process: %s", p)
 
     for p in processes:
         p.join()
-        with lock:
-            logger.info("Joined Process: %s", p)
+        logger.info("Joined Process: %s", p)
 
 
 if __name__ == "__main__":

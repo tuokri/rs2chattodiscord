@@ -4,9 +4,7 @@ from urllib import request
 from urllib.error import HTTPError
 from urllib.error import URLError
 
-import logger
-
-logger = logger.get_logger(__file__ + ":" + __name__)
+import mplogger
 
 
 class YaaDiscord(object):

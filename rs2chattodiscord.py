@@ -15,10 +15,10 @@ from urllib import parse
 import pycurl
 from bs4 import BeautifulSoup
 
-import logger
+import mplogger
 from yaadiscord import YaaDiscord
 
-logger = logger.get_logger(__file__ + ":" + __name__)
+logger = mplogger.get_logger(__file__ + ":" + __name__)
 
 HEADERS = {}
 HEADERS_MAX_LEN = 50
@@ -298,16 +298,24 @@ def authenticate(login_url: str, username: str, password: str) -> AuthData:
 
 
 def auth_timed_out(start_time, timeout):
+    if timeout <= 0:
+        logger.info(
+            "auth_timed_out(): cannot calculate authentication timeout for timeout: %s", timeout)
+        return False
+
     time_now = time.time()
     if (start_time + timeout) < time_now:
-        logger.info("Authentication timed out for start_time=%s, timeout=%s, time_now=%s",
-                    start_time, timeout, time_now)
+        logger.info(
+            "auth_timed_out(): authentication timed out for start_time=%s, timeout=%s, time_now=%s",
+            start_time, timeout, time_now)
         return True
     return False
 
 
-def rs2_webadmin_worker(queue: mp.Queue, login_url: str, chat_url: str,
+def rs2_webadmin_worker(queue: mp.Queue, log_queue: mp.Queue, login_url: str, chat_url: str,
                         username: str, password: str):
+    mplogger.worker_configurer(log_queue)
+
     logger.info("Starting rs2_webadmin_worker pid: %s", os.getpid())
     auth_data = authenticate(login_url, username, password)
     t = time.time()
@@ -345,7 +353,9 @@ def rs2_webadmin_worker(queue: mp.Queue, login_url: str, chat_url: str,
         time.sleep(5)
 
 
-def discord_webhook_worker(queue: mp.Queue, yd: YaaDiscord):
+def discord_webhook_worker(queue: mp.Queue, log_queue: mp.Queue, yd: YaaDiscord):
+    mplogger.worker_configurer(log_queue)
+
     logger.info("Starting discord_webhook_worker pid: %s", os.getpid())
 
     while True:
@@ -383,19 +393,16 @@ def discord_webhook_worker(queue: mp.Queue, yd: YaaDiscord):
 
 
 # TODO:
-#  multiprocessing:
-#  process1: read messages from RS2 WebAdmin and enqueue them (producer).
-#  process2: dequeue messages and post them to webhook (consumer).
-
-# TODO:
 #  10 minute delay for posting to webhook.
 #  Store messages in PostgreSQL DB (in Heroku)?
-
-# TODO:
-#  Refactor logging in Processes (with lock) -> dedicated process-logging-function.
 def main():
     args = parse_args()
     cfg = defaultdict(dict)
+
+    lqueue = mp.Queue()
+    listener = mp.Process(target=mplogger.listener_process,
+                          args=(lqueue, mplogger.listener_configurer))
+    listener.start()
 
     if args.heroku:
         logger.info("Running with --heroku argument")
@@ -429,10 +436,10 @@ def main():
 
     queue = mp.Queue()
     processes = [
-        mp.Process(target=rs2_webadmin_worker,
-                   args=(queue, login_url, chat_data_url, username, password)),
-        mp.Process(target=discord_webhook_worker,
-                   args=(queue, yd)),
+        mp.Process(target=rs2_webadmin_worker, name="rs2_webadmin_worker",
+                   args=(queue, lqueue, login_url, chat_data_url, username, password)),
+        mp.Process(target=discord_webhook_worker, name="discord_webhook_worker",
+                   args=(queue, lqueue, yd)),
     ]
 
     for p in processes:
@@ -442,6 +449,9 @@ def main():
     for p in processes:
         p.join()
         logger.info("Joined Process: %s", p)
+
+    lqueue.put_nowait(None)
+    listener.join()
 
 
 if __name__ == "__main__":

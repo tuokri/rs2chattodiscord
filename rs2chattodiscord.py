@@ -30,6 +30,9 @@ NOTICE_FORMAT = "**{message}**"
 NORTH_EMOJI = ":red_circle:"
 SOUTH_EMOJI = ":large_blue_circle:"
 DELAY_SECONDS = 5 * 60
+PING_ADMIN = "!admin"
+PING_HC = "<@&548614059768020993>"
+PING_PO = "<@&563072608564936704>"
 
 
 class AuthData(object):
@@ -370,8 +373,16 @@ def auth_timed_out(start_time, timeout):
     return False
 
 
-def rs2_webadmin_worker(queue: mp.Queue, log_queue: mp.Queue, login_url: str, chat_url: str,
-                        username: str, password: str):
+def parse_chat_message_div(div) -> tuple:
+    teamcolor = div.find("span", attrs={"class": "teamcolor"})
+    teamnotice = div.find("span", attrs={"class": "teamnotice"})
+    name = div.find("span", attrs={"class": "username"})
+    msg = div.find("span", attrs={"class": "message"})
+    return teamcolor, teamnotice, name, msg
+
+
+def rs2_webadmin_worker(delayed_queue: mp.Queue, instant_queue: mp.Queue, log_queue: mp.Queue,
+                        login_url: str, chat_url: str, username: str, password: str):
     mplogger.worker_configurer(log_queue)
     # noinspection PyShadowingNames
     logger = logging.getLogger(__file__ + ":" + __name__)
@@ -409,8 +420,22 @@ def rs2_webadmin_worker(queue: mp.Queue, log_queue: mp.Queue, login_url: str, ch
                 len(chat_notice_divs))
 
             for i, div in enumerate(chat_message_divs):
-                queue.put((div, time.time(), DELAY_SECONDS))
-                logger.info("rs2_webadmin_worker(): Enqueued div no. %s", i)
+                tc, tn, name, msg = parse_chat_message_div(div)
+                if msg.lower().lstrip().starswith(PING_ADMIN):
+                    logger.info("rs2_webadmin_worker(): detected !admin ping")
+                    instant_queue.put(div)
+                    logger.info("rs2_webadmin_worker(): Enqueued div no. %s in instant queue", i)
+
+                    ping_div = f"""<div class="chatmessage">
+                        <span class="teamcolor" style="background: #E54927;">&#160;</span>
+                        <span class="username">__RADIOMAN__</span>:
+                        <span class="message">__ADMIN SUMMONED INGAME__ by: {name}! {PING_HC} {PING_PO}</span>
+                        </div>"""
+                    instant_queue.put(ping_div)
+                    logger.info("rs2_webadmin_worker(): Enqueued ping_div no. %s in instant queue", i)
+                else:
+                    delayed_queue.put((div, time.time(), DELAY_SECONDS))
+                    logger.info("rs2_webadmin_worker(): Enqueued div no. %s in delayed queue", i)
 
             c.close()
             time.sleep(5)
@@ -433,10 +458,7 @@ def discord_webhook_worker(queue: mp.Queue, log_queue: mp.Queue, yd: YaaDiscord)
             div = queue.get()
             logger.info("discord_webhook_worker(): dequeued div")
 
-            teamcolor = div.find("span", attrs={"class": "teamcolor"})
-            teamnotice = div.find("span", attrs={"class": "teamnotice"})
-            name = div.find("span", attrs={"class": "username"})
-            msg = div.find("span", attrs={"class": "message"})
+            teamcolor, teamnotice, name, msg = parse_chat_message_div(div)
 
             if teamnotice:
                 team = "TEAM"
@@ -471,8 +493,9 @@ def sleep_and_put(div, start_time, delay, out_queue):
     duration = delay - (time.time() - start_time)
     logger.info("sleep_and_put(): sleeping for %s seconds", duration)
     time.sleep(duration)
-    logger.info("sleep_and_put(): putting item into queue")
+    logger.info("sleep_and_put(): putting item into out_queue")
     out_queue.put(div)
+    return True
 
 
 def queue_worker(delayed_queue: mp.Queue, out_queue: mp.Queue, log_queue: mp.Queue):
@@ -484,14 +507,24 @@ def queue_worker(delayed_queue: mp.Queue, out_queue: mp.Queue, log_queue: mp.Que
 
     executor = ThreadPoolExecutor(max_workers=25)
     futures = []
+    done_futures = []
     while True:
         div, start_time, delay = delayed_queue.get()
         logger.info("queue_worker(): got div with start_time: %s, delay: %s",
                     start_time, delay)
         futures.append(executor.submit(sleep_and_put, div, start_time, delay, out_queue))
         for f in futures:
+            logger.info("len(futures): %s", len(futures))
             if f.done():
-                logger.info("future done: %s, result: %s", f, f.result())
+                result = f.result()
+                logger.info("future done: %s, result: %s", f)
+                if not result:
+                    logger.error("future was not completed succesfully")
+                done_futures.append(f)
+
+        futures = [f for f in futures if f not in done_futures]
+        logger.info("cleaned futures list, new len(futures): %s", len(futures))
+        done_futures = []
 
 
 # TODO:
@@ -537,14 +570,14 @@ def main():
     yd = YaaDiscord(cfg["DISCORD"])
 
     delayed_queue = mp.Queue()
-    queue = mp.Queue()
+    out_queue = mp.Queue()
     processes = [
         mp.Process(target=rs2_webadmin_worker, name="rs2_webadmin_worker",
-                   args=(delayed_queue, lqueue, login_url, chat_data_url, username, password)),
+                   args=(delayed_queue, out_queue, lqueue, login_url, chat_data_url, username, password)),
         mp.Process(target=discord_webhook_worker, name="discord_webhook_worker",
-                   args=(queue, lqueue, yd)),
+                   args=(out_queue, lqueue, yd)),
         mp.Process(target=queue_worker, name="queue_worker",
-                   args=(delayed_queue, queue, lqueue))
+                   args=(delayed_queue, out_queue, lqueue))
     ]
 
     for p in processes:

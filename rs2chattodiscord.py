@@ -78,12 +78,14 @@ def header_function(header_line):
 
     try:
         if len(HEADERS["connection"]) > HEADERS_MAX_LEN:
+            print(HEADERS)
             logger.info(("Headers 'connection' values max length (%s) exceeded, resetting headers "
                          + "(preserving latest entries)"), HEADERS_MAX_LEN)
             new_headers = {}
             for k, v in HEADERS.items():
                 new_headers[k] = v[-1]
             HEADERS = new_headers
+            print(new_headers)
             logger.info("Headers 'connection' list new length=%s", len(HEADERS["connection"]))
     except KeyError as ke:
         logger.error("header_function(): error: %s", ke)

@@ -293,17 +293,21 @@ def find_sessionid(headers):
     #     sessionid = ""
 
     # 'sessionid="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-    if type(headers["set-cookie"]) == str:
-        logger.info("type(HEADERS['set-cookie']) == str")
-        r = re.search(r'sessionid="(.*?)"', HEADERS["set-cookie"]).group(1)
-    elif type(headers["set-cookie"]) == list:
-        logger.info("type(HEADERS['set-cookie']) == list")
-        sessionid = [i for i in HEADERS["set-cookie"] if i.startswith("sessionid=")][-1]
-        r = re.search(r'sessionid="(.*?)"', sessionid).group(1)
-    else:
-        logger.error("type(HEADERS['set-cookie']) == %s", type(headers["set-cookie"]))
-        logger.error("cant get sessionid from headers")
-        r = ""
+    r = ""
+    try:
+        if type(headers["set-cookie"]) == str:
+            logger.info("type(HEADERS['set-cookie']) == str")
+            r = re.search(r'sessionid="(.*?)"', HEADERS["set-cookie"]).group(1)
+        elif type(headers["set-cookie"]) == list:
+            logger.info("type(HEADERS['set-cookie']) == list")
+            sessionid_match = [i for i in HEADERS["set-cookie"] if i.startswith("sessionid=")][-1]
+            logger.info("find_sessionid(): sessionid_match: %s", sessionid_match)
+            r = re.search(r'sessionid="(.*?)"', sessionid_match).group(1)
+        else:
+            logger.error("type(HEADERS['set-cookie']) == %s", type(headers["set-cookie"]))
+            logger.error("cant get sessionid from headers")
+    except Exception as e:
+        logger.error("find_sessionid(): error: %s", e, exc_info=True)
 
     return f'sessionid="{r}";'
 

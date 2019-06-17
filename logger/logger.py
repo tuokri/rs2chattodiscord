@@ -43,9 +43,10 @@ def get_logger(name: str, lock=LOGGER_LOCK) -> logging.Logger:
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
+    ll = LockingLogger(name)
     logger.__mp_custom_lock = lock
-    logger.debug = LockingLogger.debug_with_lock.__get__(logger)
-    logger.info = LockingLogger.info_with_lock.__get__(logger)
-    logger.error = LockingLogger.error_with_lock.__get__(logger)
+    logger.debug = LockingLogger.debug_with_lock.__get__(ll, LockingLogger)
+    logger.info = LockingLogger.info_with_lock.__get__(ll, LockingLogger)
+    logger.error = LockingLogger.error_with_lock.__get__(ll, LockingLogger)
 
     return logger

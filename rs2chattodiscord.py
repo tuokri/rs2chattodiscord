@@ -267,6 +267,8 @@ def get_messages(c: pycurl.Curl, url: str, sessionid: str, authcred: str, authti
 
 
 def authenticate(login_url: str, username: str, password: str) -> AuthData:
+    logger.info("authenticate() called")
+
     c = pycurl.Curl()
 
     resp = get_login(c, login_url)

@@ -37,12 +37,16 @@ def get_logger(name: str, lock=LOGGER_LOCK) -> logging.Logger:
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    file_handler = RotatingFileHandler("rs2chattodiscord" + ".log", maxBytes=1024 * 1024 * 10, encoding="utf-8")
+    file_handler = RotatingFileHandler(
+        "rs2chattodiscord" + ".log", maxBytes=1024 * 1024 * 10, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
     ll = LockingLogger(name, logging.DEBUG)
+    ll.addHandler(console_handler)
+    ll.addHandler(file_handler)
+
     logger.__mp_custom_lock = lock
     logger.debug = LockingLogger.debug_with_lock.__get__(ll, LockingLogger)
     logger.info = LockingLogger.info_with_lock.__get__(ll, LockingLogger)

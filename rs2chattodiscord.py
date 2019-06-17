@@ -513,11 +513,11 @@ def queue_worker(delayed_queue: mp.Queue, out_queue: mp.Queue, log_queue: mp.Que
         logger.info("queue_worker(): got div with start_time: %s, delay: %s",
                     start_time, delay)
         futures.append(executor.submit(sleep_and_put, div, start_time, delay, out_queue))
+        logger.info("len(futures): %s", len(futures))
         for f in futures:
-            logger.info("len(futures): %s", len(futures))
             if f.done():
                 result = f.result()
-                logger.info("future done: %s, result: %s", f)
+                logger.info("future done: %s, result: %s", f, result)
                 if not result:
                     logger.error("future was not completed succesfully")
                 done_futures.append(f)

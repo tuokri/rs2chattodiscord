@@ -7,7 +7,7 @@ def listener_configurer():
     root = logging.getLogger()
     h = RotatingFileHandler(
         "rs2chattodiscord" + ".log", maxBytes=1024 * 1024 * 10, encoding="utf-8")
-    f = logging.Formatter("%(asctime)s:%(processName)-10s:%(name)s:%(levelname)-8s:%(message)s")
+    f = logging.Formatter("%(asctime)s:%(processName)s:%(name)s:%(levelname)s:%(message)s")
     h.setFormatter(f)
 
     console_handler = logging.StreamHandler(sys.stdout)

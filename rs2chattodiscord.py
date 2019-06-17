@@ -76,16 +76,19 @@ def parse_args():
 def header_function(header_line):
     global HEADERS
 
-    if len(HEADERS) > HEADERS_MAX_LEN:
-        logger.info("Headers keys max length (%s) exceeded, resetting headers", HEADERS_MAX_LEN)
-        HEADERS = {}
-
     try:
         if len(HEADERS["connection"]) > HEADERS_MAX_LEN:
-            logger.info("Headers 'connection' values max length (%s) exceeded, resetting headers", HEADERS_MAX_LEN)
-            HEADERS = {}
+            logger.info(("Headers 'connection' values max length (%s) exceeded, resetting headers "
+                         + "(preserving latest entries)"), HEADERS_MAX_LEN)
+            new_headers = {}
+            for k, v in HEADERS.items():
+                new_headers[k] = v[-1]
+            HEADERS = new_headers
+            logger.info("Headers new length=%s", len(HEADERS))
     except KeyError as ke:
         logger.error("header_function(): error: %s", ke)
+    except IndexError as ie:
+        logger.error("header_function(): error: %s", ie)
 
     # HTTP standard specifies that headers are encoded in iso-8859-1.
     header_line = header_line.decode("iso-8859-1")

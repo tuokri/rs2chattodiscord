@@ -27,6 +27,30 @@ NORTH_EMOJI = ":red_circle:"
 SOUTH_EMOJI = ":large_blue_circle:"
 
 
+class AuthData(object):
+    def __init__(self, timeout: int, authcred: str, sessionid: str, authtimeout: str):
+        self._timeout = int(timeout)
+        self._authcred = authcred
+        self._sessionid = sessionid
+        self._authtimeout = authtimeout
+
+    @property
+    def timeout(self) -> int:
+        return self._timeout
+
+    @property
+    def authcred(self) -> str:
+        return self._authcred
+
+    @property
+    def sessionid(self) -> str:
+        return self._sessionid
+
+    @property
+    def authtimeout(self) -> str:
+        return self._authtimeout
+
+
 def read_config(config_file: str) -> cp.ConfigParser:
     config = cp.ConfigParser()
     config.read(config_file)
@@ -51,9 +75,17 @@ def parse_args():
 
 def header_function(header_line):
     global HEADERS
+
     if len(HEADERS) > HEADERS_MAX_LEN:
-        logger.info("Headers max length (%s) exceeded, resetting headers", HEADERS_MAX_LEN)
+        logger.info("Headers keys max length (%s) exceeded, resetting headers", HEADERS_MAX_LEN)
         HEADERS = {}
+
+    try:
+        if len(HEADERS["connection"]) > HEADERS_MAX_LEN:
+            logger.info("Headers 'connection' values max length (%s) exceeded, resetting headers", HEADERS_MAX_LEN)
+            HEADERS = {}
+    except KeyError as ke:
+        logger.error("header_function(): error: %s", ke)
 
     # HTTP standard specifies that headers are encoded in iso-8859-1.
     header_line = header_line.decode("iso-8859-1")
@@ -93,7 +125,7 @@ def print_headers(headers):
     print("******************")
 
 
-def read_encoding(headers, index):
+def read_encoding(headers: dict, index: int) -> str:
     encoding = None
     if "content-type" in headers:
         content_type = headers["content-type"][index].lower()
@@ -110,7 +142,7 @@ def read_encoding(headers, index):
     return encoding
 
 
-def get_login(c, url):
+def get_login(c: pycurl.Curl, url: str) -> bytes:
     buffer = BytesIO()
 
     header = [
@@ -141,7 +173,8 @@ def get_login(c, url):
     return buffer.getvalue()
 
 
-def post_login(c, url, sessionid, token, username, password, remember=2678400):
+def post_login(c: pycurl.Curl, url: str, sessionid: str, token: str, username: str, password: str,
+               remember=2678400) -> bytes:
     buffer = BytesIO()
 
     header = [
@@ -185,7 +218,7 @@ def post_login(c, url, sessionid, token, username, password, remember=2678400):
     return buffer.getvalue()
 
 
-def get_messages(c, url, sessionid, authcred, authtimeout):
+def get_messages(c: pycurl.Curl, url: str, sessionid: str, authcred: str, authtimeout: int) -> bytes:
     buffer = BytesIO()
 
     header = [
@@ -224,8 +257,50 @@ def get_messages(c, url, sessionid, authcred, authtimeout):
     return buffer.getvalue()
 
 
-def auth_timed_out(start_time, authtimeout):
-    pass
+def authenticate(login_url: str, username: str, password: str) -> AuthData:
+    c = pycurl.Curl()
+
+    resp = get_login(c, login_url)
+    encoding = read_encoding(HEADERS, 0)
+    parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
+    token = parsed_html.find("input", attrs={"name": "token"}).get("value")
+    logger.debug("token: %s", token)
+    sessionid = HEADERS["set-cookie"].split(";")[0]
+
+    post_login(c, login_url, sessionid=sessionid,
+               token=token, username=username, password=password)
+
+    authcred = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][0]
+    authtimeout = [i for i in HEADERS["set-cookie"] if i.startswith("authtimeout=")][0]
+
+    authtimeout_value = int(re.search(r'authtimeout="(.*?)"', authtimeout).group(1))
+
+    # print_headers(HEADERS)
+    logger.debug("authcred: %s", authcred)
+    logger.debug("authtimeout: %s", authtimeout)
+    logger.info("authtimeout_value: %s", authtimeout_value)
+
+    c.close()
+    return AuthData(timeout=authtimeout_value, authcred=authcred, sessionid=sessionid, authtimeout=authtimeout)
+
+
+def auth_timed_out(start_time, timeout):
+    time_now = time.time()
+    if (start_time + timeout) > time_now:
+        logger.info("Authentication timed out for start_time=%s, timeout=%s, time_now=%s",
+                    start_time, timeout, time_now)
+        return True
+    return False
+
+
+def rs2_webadmin_worker():
+    while True:
+        pass
+
+
+def discord_webhook_worker():
+    while True:
+        pass
 
 
 def main():
@@ -244,12 +319,14 @@ def main():
         cfg["DISCORD"]["AVATAR_URL"] = os.environ["DISCORD_AVATAR_URL"]
         cfg["DISCORD"]["USER_AGENT"] = os.environ["DISCORD_USER_AGENT"]
         cfg["MISC"]["CREATOR"] = os.environ["CREATOR"]
+        cfg["MISC"]["DATABASE_URL"] = os.environ["DATABASE_URL"]
     else:
         cfg = read_config(args.config)
 
     try:
         cfg["RS2_WEBADMIN"]["ADDRESS"] = validate_address(cfg["RS2_WEBADMIN"]["ADDRESS"])
-    except ValueError:
+    except ValueError as ve:
+        logger.error("Error: %s", ve)
         sys.exit(1)
 
     login_url = parse.urljoin(cfg["RS2_WEBADMIN"]["ADDRESS"], cfg["RS2_WEBADMIN"]["LOGIN_PATH"])
@@ -261,46 +338,25 @@ def main():
 
     yd = YaaDiscord(cfg["DISCORD"])
 
-    c = pycurl.Curl()
-
-    resp = get_login(c, login_url)
-    encoding = read_encoding(HEADERS, 0)
-    parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
-    token = parsed_html.find("input", attrs={"name": "token"}).get("value")
-    logger.debug("token: %s", token)
-    sessionid = HEADERS["set-cookie"].split(";")[0]
-
-    post_login(c, login_url, sessionid=sessionid,
-               token=token, username=username, password=password)
-
-    authcred = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][0]
-    authtimeout = [i for i in HEADERS["set-cookie"] if i.startswith("authtimeout=")][0]
-
-    authtimeout_value = re.search(r'authtimeout="(.*?)"', authtimeout).group(1)
-
-    # print_headers(HEADERS)
-    logger.debug("authcred: %s", authcred)
-    logger.debug("authtimeout: %s", authtimeout)
-    logger.info("authtimeout_value: %s", authtimeout_value)
-
-    c.close()
-
+    auth_data = authenticate(login_url, username, password)
     t = time.time()
     while RUNNING:
-        if auth_timed_out(t, int(authtimeout_value)):
-            pass
+        if auth_timed_out(t, auth_data.timeout):
+            logger.info("Re-authenticating")
+            auth_data = authenticate(login_url, username, password)
+            t = time.time()
 
         c = pycurl.Curl()
 
-        resp = get_messages(c, chat_data_url, sessionid, authcred, authtimeout)
+        resp = get_messages(c, chat_data_url, auth_data.sessionid, auth_data.authcred, auth_data.timeout)
         encoding = read_encoding(HEADERS, 2)
         parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
         divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
 
         # TODO:
         #  multiprocessing:
-        #  process1: read messages from RS2 WebAdmin and store them (producer).
-        #  process2: remove messages from storage and post them to webhook (consumer).
+        #  process1: read messages from RS2 WebAdmin and enqueue them (producer).
+        #  process2: dequeue messages and post them to webhook (consumer).
 
         # TODO:
         #  10 minute delay for posting to webhook.

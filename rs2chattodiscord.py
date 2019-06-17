@@ -136,13 +136,13 @@ def read_encoding(headers: dict, index: int) -> str:
         match = re.search(r"charset=(\S+)", content_type)
         if match:
             encoding = match.group(1)
-            logger.info("Decoding using %s", encoding)
+            logger.info("read_encoding(): encoding is %s", encoding)
     if encoding is None:
         # Default encoding for HTML is iso-8859-1.
         # Other content types may have different default encoding,
         # or in case of binary data, may have no encoding at all.
         encoding = "iso-8859-1"
-        logger.info("Assuming encoding is %s", encoding)
+        logger.info("read_encoding(): assuming encoding is %s", encoding)
     return encoding
 
 
@@ -355,7 +355,13 @@ def main():
         resp = get_messages(c, chat_data_url, auth_data.sessionid, auth_data.authcred, auth_data.timeout)
         encoding = read_encoding(HEADERS, -1)
         parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
-        divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
+
+        logger.debug("Raw HTML response: %s", parsed_html.text)
+
+        chat_message_divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
+        chat_notice_divs = parsed_html.find_all("div", attrs={"class": "chatnotice"})
+        logger.info("Got %s 'class=chatmessage' chat_message_divs from WebAdmin", len(chat_message_divs))
+        logger.info("Got %s 'class=chatnotice' chat_message_divs from WebAdmin", len(chat_notice_divs))
 
         # TODO:
         #  multiprocessing:
@@ -366,8 +372,8 @@ def main():
         #  10 minute delay for posting to webhook.
         #  Store messages in PostgreSQL DB (in Heroku)?
 
-        for div in divs:
-            logger.info("%s divs in parsed HTML", len(divs))
+        for div in chat_message_divs:
+            logger.info("%s chat_message_divs in parsed HTML", len(chat_message_divs))
             teamcolor = div.find("span", attrs={"class": "teamcolor"})
             teamnotice = div.find("span", attrs={"class": "teamnotice"})
             name = div.find("span", attrs={"class": "username"})
@@ -389,11 +395,11 @@ def main():
             logger.info("Posting message: %s", chat_msg)
             success = yd.post_chat_message(chat_msg)
             if not success:
-                logger.info("Failed to post message to webhook, retrying")
+                logger.error("Failed to post message to webhook, retrying")
                 success = yd.retry_all_messages()
                 if not success:
                     logger.error("Failed to retry")
-                    yd.post_chat_message(f"Mr. {creator}, I don't feel so good. (Error, check logs!)")
+                    yd.post_chat_message(f"Mr. {creator}, I don't feel so good. (Error! Check logs!)")
 
             time.sleep(0.05)
 

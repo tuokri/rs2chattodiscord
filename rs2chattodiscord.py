@@ -50,6 +50,10 @@ class AuthData(object):
     def sessionid(self) -> str:
         return self._sessionid
 
+    @sessionid.setter
+    def sessionid(self, sessionid: str):
+        self._sessionid = sessionid
+
     @property
     def authtimeout(self) -> str:
         return self._authtimeout
@@ -271,7 +275,7 @@ def get_messages(c: pycurl.Curl, url: str, sessionid: str, authcred: str, authti
     c.setopt(c.TCP_KEEPALIVE, 1)
     c.setopt(c.FOLLOWLOCATION, True)
 
-    print_headers(HEADERS)
+    # print_headers(HEADERS)
 
     c.perform()
     logger.info("get_messages() HTTP response: %s", c.getinfo(c.HTTP_CODE))
@@ -323,7 +327,7 @@ def authenticate(login_url: str, username: str, password: str) -> AuthData:
     token = parsed_html.find("input", attrs={"name": "token"}).get("value")
     logger.debug("token: %s", token)
 
-    print_headers(HEADERS)
+    # print_headers(HEADERS)
     sessionid = find_sessionid(HEADERS)
 
     logger.debug("authenticate(): got sessionid: %s, from headers", sessionid)
@@ -331,7 +335,7 @@ def authenticate(login_url: str, username: str, password: str) -> AuthData:
     post_login(c, login_url, sessionid=sessionid,
                token=token, username=username, password=password)
 
-    print_headers(HEADERS)
+    # print_headers(HEADERS)
 
     authcred = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][-1]
     authtimeout = [i for i in HEADERS["set-cookie"] if i.startswith("authtimeout=")][-1]
@@ -384,6 +388,7 @@ def rs2_webadmin_worker(queue: mp.Queue, log_queue: mp.Queue, login_url: str, ch
 
             latest_sessionid = find_sessionid(HEADERS)
             logger.info("rs2_webadmin_worker(): latest sessionid: %s", latest_sessionid)
+            auth_data.sessionid = latest_sessionid
             resp = get_messages(c, chat_url, auth_data.sessionid, auth_data.authcred, auth_data.timeout)
             encoding = read_encoding(HEADERS, -1)
             logger.info("rs2_webadmin_worker(): Encoding from headers: %s", encoding)

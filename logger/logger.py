@@ -1,7 +1,6 @@
 import logging
 import multiprocessing as mp
 import sys
-import types
 from logging import NOTSET
 from logging.handlers import RotatingFileHandler
 
@@ -10,7 +9,7 @@ LOGGER_LOCK = mp.Lock()
 
 class LockingLogger(logging.Logger):
     def __init__(self, name, level=NOTSET):
-        logging.Logger.__init__(self, name, level=NOTSET)
+        logging.Logger.__init__(self, name, level=level)
         self.__mp_custom_lock = LOGGER_LOCK
 
     def debug_with_lock(self, msg, *args, **kwargs):
@@ -27,7 +26,7 @@ class LockingLogger(logging.Logger):
 
 
 def get_logger(name: str, lock=LOGGER_LOCK) -> logging.Logger:
-    print("get_logger(): LOGGER_LOCK id: %s", id(LOGGER_LOCK))
+    print("get_logger(): LOGGER_LOCK id: ", id(LOGGER_LOCK))
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
@@ -43,7 +42,7 @@ def get_logger(name: str, lock=LOGGER_LOCK) -> logging.Logger:
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
-    ll = LockingLogger(name)
+    ll = LockingLogger(name, logging.DEBUG)
     logger.__mp_custom_lock = lock
     logger.debug = LockingLogger.debug_with_lock.__get__(ll, LockingLogger)
     logger.info = LockingLogger.info_with_lock.__get__(ll, LockingLogger)

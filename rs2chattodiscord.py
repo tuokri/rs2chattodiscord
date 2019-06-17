@@ -421,8 +421,7 @@ def rs2_webadmin_worker(delayed_queue: mp.Queue, instant_queue: mp.Queue, log_qu
 
             for i, div in enumerate(chat_message_divs):
                 tc, tn, name, msg = parse_chat_message_div(div)
-                print("msg=", msg)
-                if msg.lower().lstrip().startswith(PING_ADMIN):
+                if msg.text.lower().lstrip().startswith(PING_ADMIN):
                     logger.info("rs2_webadmin_worker(): detected !admin ping")
                     instant_queue.put(div)
                     logger.info("rs2_webadmin_worker(): Enqueued div no. %s in instant queue", i)

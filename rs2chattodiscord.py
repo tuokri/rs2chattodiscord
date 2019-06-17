@@ -292,9 +292,19 @@ def find_sessionid(headers):
     #     logger.error("cant get sessionid from headers")
     #     sessionid = ""
 
-    sessionid = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][-1]
     # 'sessionid="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-    r = re.search(r'sessionid="(.*?)"', sessionid).group(1)
+    if type(headers["set-cookie"]) == str:
+        logger.info("type(HEADERS['set-cookie']) == str")
+        r = re.search(r'sessionid="(.*?)"', HEADERS["set-cookie"]).group(1)
+    elif type(headers["set-cookie"]) == list:
+        logger.info("type(HEADERS['set-cookie']) == list")
+        sessionid = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][-1]
+        r = re.search(r'sessionid="(.*?)"', sessionid).group(1)
+    else:
+        logger.error("type(HEADERS['set-cookie']) == %s", type(headers["set-cookie"]))
+        logger.error("cant get sessionid from headers")
+        r = ""
+
     return f'sessionid="{r}";'
 
 

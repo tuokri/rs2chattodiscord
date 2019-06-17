@@ -208,7 +208,7 @@ def post_login(c: pycurl.Curl, url: str, sessionid: str, token: str, username: s
     postfields = (f"token={token}&password_hash=%24sha1%24{password_hash}"
                   + f"&username={username}&password=&remember={remember}")
     postfieldsize = len(postfields)
-    logger.info("postfieldsize: %s", postfields)
+    logger.info("postfieldsize: %s", postfieldsize)
 
     logger.debug("postfields: %s", postfields)
 
@@ -253,7 +253,7 @@ def get_messages(c: pycurl.Curl, url: str, sessionid: str, authcred: str, authti
 
     postfields = "ajax=1"
     postfieldsize = len(postfields)
-    logger.info("postfieldsize: %s", postfields)
+    logger.info("postfieldsize: %s", postfieldsize)
 
     c.setopt(c.WRITEFUNCTION, buffer.write)
     c.setopt(c.HEADERFUNCTION, header_function)
@@ -280,17 +280,22 @@ def get_messages(c: pycurl.Curl, url: str, sessionid: str, authcred: str, authti
 
 def find_sessionid(headers):
     logger.info("find_sessionid() called")
-    if type(headers["set-cookie"]) == str:
-        logger.info("type(HEADERS['set-cookie']) == str")
-        sessionid = headers["set-cookie"].split(";")[0]
-    elif type(headers["set-cookie"]) == list:
-        logger.info("type(HEADERS['set-cookie']) == list")
-        sessionid = headers["set-cookie"][-1].split(";")[0]
-    else:
-        logger.error("type(HEADERS['set-cookie']) == %s", type(headers["set-cookie"]))
-        logger.error("cant get sessionid from headers")
-        sessionid = ""
-    return sessionid
+
+    # if type(headers["set-cookie"]) == str:
+    #     logger.info("type(HEADERS['set-cookie']) == str")
+    #     sessionid = headers["set-cookie"].split(";")[0]
+    # elif type(headers["set-cookie"]) == list:
+    #     logger.info("type(HEADERS['set-cookie']) == list")
+    #     sessionid = headers["set-cookie"][-1].split(";")[0]
+    # else:
+    #     logger.error("type(HEADERS['set-cookie']) == %s", type(headers["set-cookie"]))
+    #     logger.error("cant get sessionid from headers")
+    #     sessionid = ""
+
+    sessionid = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][-1]
+    # 'sessionid="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+    r = re.search(r'sessionid="(.*?)"', sessionid).group(1)
+    return f'sessionid="{r}";'
 
 
 def authenticate(login_url: str, username: str, password: str) -> AuthData:
@@ -313,8 +318,8 @@ def authenticate(login_url: str, username: str, password: str) -> AuthData:
 
     print_headers(HEADERS)
 
-    authcred = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][0]
-    authtimeout = [i for i in HEADERS["set-cookie"] if i.startswith("authtimeout=")][0]
+    authcred = [i for i in HEADERS["set-cookie"] if i.startswith("authcred=")][-1]
+    authtimeout = [i for i in HEADERS["set-cookie"] if i.startswith("authtimeout=")][-1]
 
     authtimeout_value = int(re.search(r'authtimeout="(.*?)"', authtimeout).group(1))
 
@@ -354,36 +359,41 @@ def rs2_webadmin_worker(queue: mp.Queue, log_queue: mp.Queue, login_url: str, ch
     t = time.time()
 
     while True:
-        if auth_timed_out(t, auth_data.timeout):
-            logger.info("rs2_webadmin_worker(): Re-authenticating")
-            auth_data = authenticate(login_url, username, password)
-            t = time.time()
+        try:
+            if auth_timed_out(t, auth_data.timeout):
+                logger.info("rs2_webadmin_worker(): Re-authenticating")
+                auth_data = authenticate(login_url, username, password)
+                t = time.time()
 
-        c = pycurl.Curl()
+            c = pycurl.Curl()
 
-        latest_sessionid = find_sessionid(HEADERS)
-        logger.info("rs2_webadmin_worker(): lastest sessionid: %s", latest_sessionid)
-        resp = get_messages(c, chat_url, auth_data.sessionid, auth_data.authcred, auth_data.timeout)
-        encoding = read_encoding(HEADERS, -1)
-        logger.info("rs2_webadmin_worker(): Encoding from headers: %s", encoding)
-        parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
-        logger.debug("rs2_webadmin_worker(): Raw HTML response: %s", parsed_html)
-        chat_message_divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
-        chat_notice_divs = parsed_html.find_all("div", attrs={"class": "chatnotice"})
+            latest_sessionid = find_sessionid(HEADERS)
+            logger.info("rs2_webadmin_worker(): latest sessionid: %s", latest_sessionid)
+            resp = get_messages(c, chat_url, auth_data.sessionid, auth_data.authcred, auth_data.timeout)
+            encoding = read_encoding(HEADERS, -1)
+            logger.info("rs2_webadmin_worker(): Encoding from headers: %s", encoding)
+            parsed_html = BeautifulSoup(resp.decode(encoding), features="html.parser")
+            logger.debug("rs2_webadmin_worker(): Raw HTML response: %s", parsed_html)
+            chat_message_divs = parsed_html.find_all("div", attrs={"class": "chatmessage"})
+            chat_notice_divs = parsed_html.find_all("div", attrs={"class": "chatnotice"})
 
-        logger.info(
-            "rs2_webadmin_worker(): Got %s 'class=chatmessage' divs from WebAdmin",
-            len(chat_message_divs))
-        logger.info(
-            "rs2_webadmin_worker(): Got %s 'class=chatnotice' divs from WebAdmin",
-            len(chat_notice_divs))
+            logger.info(
+                "rs2_webadmin_worker(): Got %s 'class=chatmessage' divs from WebAdmin",
+                len(chat_message_divs))
+            logger.info(
+                "rs2_webadmin_worker(): Got %s 'class=chatnotice' divs from WebAdmin",
+                len(chat_notice_divs))
 
-        for i, div in enumerate(chat_message_divs):
-            queue.put(div)
-            logger.info("rs2_webadmin_worker(): Enqueued div no. %s", i)
+            for i, div in enumerate(chat_message_divs):
+                queue.put(div)
+                logger.info("rs2_webadmin_worker(): Enqueued div no. %s", i)
 
-        c.close()
-        time.sleep(5)
+            c.close()
+            time.sleep(5)
+        except pycurl.error as pe:
+            logger.error("error: %s", pe)
+            logger.error("retrying after: 50 ms")
+            time.sleep(0.05)
 
 
 def discord_webhook_worker(queue: mp.Queue, log_queue: mp.Queue, yd: YaaDiscord):

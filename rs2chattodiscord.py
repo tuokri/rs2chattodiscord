@@ -283,7 +283,7 @@ def find_sessionid(headers):
     if type(headers["set-cookie"]) == str:
         logger.info("type(HEADERS['set-cookie']) == str")
         sessionid = headers["set-cookie"].split(";")[0]
-    elif type(headers["set-cookie"]) == str:
+    elif type(headers["set-cookie"]) == list:
         logger.info("type(HEADERS['set-cookie']) == list")
         sessionid = headers["set-cookie"][-1].split(";")[0]
     else:

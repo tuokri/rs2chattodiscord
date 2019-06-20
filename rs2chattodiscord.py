@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 from urllib import parse
 
+import numpy as np
 import pycurl
 from bs4 import BeautifulSoup
 
@@ -33,6 +34,34 @@ DELAY_SECONDS = 5 * 60
 PING_ADMIN = "!admin"
 PING_HC = "<@&548614059768020993>"
 PING_PO = "<@&563072608564936704>"
+
+HH_QUOTES = [
+    "Your government has abandoned you, G.I.",
+    "Defect, G.I., it is a very good idea to leave a sinking ship.",
+    "You know you cannot win this war."
+    "G.I., the government has abandoned you, they have ordered you to die, G.I. Do not trust them.",
+    "Defect, G.I.",
+    "They lie to you, G.I.",
+    "Your rich leaders grow richer while you die in the swamp, G.I.",
+    "They will give you a medal, G.I., but only after you are dead.",
+    "Your government lies to you every day, poor soldier.",
+    "You have lost this war, G.I. Your army will leave you behind."
+    "G.I., your government has betrayed you, they will not return for you.",
+    "The skies are dangerous, G.I., hey will napalm you tonight.",
+    "G.I., your helicopters fall from the sky like broken birds.",
+    "G.I., your airplanes bomb your own men.",
+    "You are not safe here.",
+    "Your pilots don't care that you are down here, G.I.",
+    "They can not see you from their airplanes, G.I. They come to bomb you.",
+    "How are you, G.I. Joe?",
+    "Our rice is safe, G.I.",
+    "Hahaha! Screw you, flying G.I.!",
+    "I kill you, G.I.",
+    "Go home, G.I.",
+    "YAAA!",
+    "G.I., your government feed you no rice. You go hungry in your fox hole, G.I.",
+    "Imperialists make you fight this war, G.I. They do not care about you.",
+]
 
 
 class AuthData(object):
@@ -495,6 +524,25 @@ def discord_webhook_worker(queue: mp.Queue, log_queue: mp.Queue, yd: YaaDiscord)
                 logger.error("discord_webhook_worker(): might lose message: %s", div.text)
 
 
+# TODO: Refactor YaaDiscord into generic class.
+# TODO: Refactor local YaaDiscord.
+def radio_hanoi_worker(cfg: dict, log_queue: mp.Queue):
+    mplogger.worker_configurer(log_queue)
+    # noinspection PyShadowingNames
+    logger = logging.getLogger(__file__ + ":" + __name__)
+
+    logger.info("Starting radio_hanoi_worker: %s", os.getpid())
+
+    yd = YaaDiscord(cfg)
+    yd.config["WEBHOOK_URL"] = os.environ["DISCORD_WEBHOOK_URL_RADIO_HANOI"]
+    while True:
+        quote = np.random.choice(HH_QUOTES)
+        logger.info("radio_hanoi_worker(): posting chat message: %s", quote)
+        yd.post_chat_message(quote)
+        logger.info("radio_hanoi_worker(): sleeping for %S seconds", 60 * 60)
+        time.sleep(60 * 60)
+
+
 def sleep_and_put(div, start_time, delay, out_queue):
     duration = delay - (time.time() - start_time)
     logger.info("sleep_and_put(): sleeping for %s seconds", duration)
@@ -583,7 +631,9 @@ def main():
         mp.Process(target=discord_webhook_worker, name="discord_webhook_worker",
                    args=(out_queue, lqueue, yd)),
         mp.Process(target=queue_worker, name="queue_worker",
-                   args=(delayed_queue, out_queue, lqueue))
+                   args=(delayed_queue, out_queue, lqueue)),
+        mp.Process(target=radio_hanoi_worker, name="radio_hanoi_worker",
+                   args=(cfg["DISCORD"], lqueue)),
     ]
 
     for p in processes:

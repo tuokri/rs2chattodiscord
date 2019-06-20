@@ -38,14 +38,14 @@ PING_PO = "<@&563072608564936704>"
 HH_QUOTES = [
     "Your government has abandoned you, G.I.",
     "Defect, G.I., it is a very good idea to leave a sinking ship.",
-    "You know you cannot win this war."
+    "You know you cannot win this war.",
     "G.I., the government has abandoned you, they have ordered you to die, G.I. Do not trust them.",
     "Defect, G.I.",
     "They lie to you, G.I.",
     "Your rich leaders grow richer while you die in the swamp, G.I.",
     "They will give you a medal, G.I., but only after you are dead.",
     "Your government lies to you every day, poor soldier.",
-    "You have lost this war, G.I. Your army will leave you behind."
+    "You have lost this war, G.I. Your army will leave you behind.",
     "G.I., your government has betrayed you, they will not return for you.",
     "The skies are dangerous, G.I., hey will napalm you tonight.",
     "G.I., your helicopters fall from the sky like broken birds.",
@@ -535,11 +535,12 @@ def radio_hanoi_worker(cfg: dict, log_queue: mp.Queue):
 
     yd = YaaDiscord(cfg)
     yd.config["WEBHOOK_URL"] = os.environ["DISCORD_WEBHOOK_URL_RADIO_HANOI"]
+    time.sleep(5 * 60)
     while True:
         quote = np.random.choice(HH_QUOTES)
         logger.info("radio_hanoi_worker(): posting chat message: %s", quote)
         yd.post_chat_message(quote)
-        logger.info("radio_hanoi_worker(): sleeping for %S seconds", 60 * 60)
+        logger.info("radio_hanoi_worker(): sleeping for %S seconds", str(60 * 60))
         time.sleep(60 * 60)
 
 

@@ -63,6 +63,15 @@ HH_QUOTES = [
     "YAAA!",
     "G.I., your government feed you no rice. You go hungry in your fox hole, G.I.",
     "Imperialists make you fight this war, G.I. They do not care about you.",
+    "Yotoro has been destroyed. Place anaddah!",
+    "ENEAME IS UH RUNNIN OUTTA TAM!",
+    "Anti-air defences are active!",
+    "Scout, report in!",
+    "Our resistance will be long and painful, but whatever the sacrifices, however long the struggle, "
+    "we shall fight to the end, until Vietnam is fully independent and reunified.",
+    "You can kill ten of my men for every one I kill of yours. But even at those odds, you will lose and I will win.",
+    "Shh... Attack on ma mahk!",
+    ":vc: > :svn: > :flag_us:",
 ]
 
 

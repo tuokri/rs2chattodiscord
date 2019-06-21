@@ -30,7 +30,9 @@ MESSAGE_FORMAT = "({team}){emoji} **{username}**: {message}"
 NOTICE_FORMAT = "**{message}**"
 NORTH_EMOJI = ":red_circle:"
 SOUTH_EMOJI = ":large_blue_circle:"
-DELAY_SECONDS = 5 * 60
+POST_CHAT_MESSAGE_DELAY_SECONDS = 5 * 60
+POST_RADIO_HANOI_QUOTE_DELAY_SECONDS_MIN = 60 * 60
+POST_RADIO_HANOI_QUOTE_DELAY_SECONDS_MAX = 60 * 60 * 6
 PING_ADMIN = "!admin"
 PING_HC = "<@&548614059768020993>"
 PING_PO = "<@&563072608564936704>"
@@ -47,7 +49,7 @@ HH_QUOTES = [
     "Your government lies to you every day, poor soldier.",
     "You have lost this war, G.I. Your army will leave you behind.",
     "G.I., your government has betrayed you, they will not return for you.",
-    "The skies are dangerous, G.I., hey will napalm you tonight.",
+    "The skies are dangerous, G.I., they will napalm you tonight.",
     "G.I., your helicopters fall from the sky like broken birds.",
     "G.I., your airplanes bomb your own men.",
     "You are not safe here.",
@@ -469,7 +471,7 @@ def rs2_webadmin_worker(delayed_queue: mp.Queue, instant_queue: mp.Queue, log_qu
                         last_ping_time = time.time()
                     logger.info("rs2_webadmin_worker(): Enqueued ping_div no. %s in instant queue", i)
                 else:
-                    delayed_queue.put((div, time.time(), DELAY_SECONDS))
+                    delayed_queue.put((div, time.time(), POST_CHAT_MESSAGE_DELAY_SECONDS))
                     logger.info("rs2_webadmin_worker(): Enqueued div no. %s in delayed queue", i)
 
             c.close()
@@ -535,13 +537,15 @@ def radio_hanoi_worker(cfg: dict, log_queue: mp.Queue):
 
     yd = YaaDiscord(cfg)
     yd.config["WEBHOOK_URL"] = os.environ["DISCORD_WEBHOOK_URL_RADIO_HANOI"]
-    time.sleep(5 * 60)
     while True:
+        sleep_secs = np.random.randint(POST_RADIO_HANOI_QUOTE_DELAY_SECONDS_MIN,
+                                       POST_RADIO_HANOI_QUOTE_DELAY_SECONDS_MAX)
+        logger.info("radio_hanoi_worker(): sleeping for %s seconds", str(sleep_secs))
+        # Sleep before sending
+        time.sleep(sleep_secs)
         quote = np.random.choice(HH_QUOTES)
         logger.info("radio_hanoi_worker(): posting chat message: %s", quote)
         yd.post_chat_message(quote)
-        logger.info("radio_hanoi_worker(): sleeping for %S seconds", str(60 * 60))
-        time.sleep(60 * 60)
 
 
 def sleep_and_put(div, start_time, delay, out_queue):

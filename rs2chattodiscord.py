@@ -38,6 +38,7 @@ PING_HC = "<@&548614059768020993>"
 PING_PO = "<@&563072608564936704>"
 
 HH_QUOTES = [
+    # Vietnam.
     "Your government has abandoned you, G.I.",
     "Defect, G.I., it is a very good idea to leave a sinking ship.",
     "You know you cannot win this war.",
@@ -72,6 +73,19 @@ HH_QUOTES = [
     "You can kill ten of my men for every one I kill of yours. But even at those odds, you will lose and I will win.",
     "Shh... Attack on ma mahk!",
     ":vc: > :svn: > :flag_us:",
+
+    # Star Wars.
+    "I love democracy.",
+    "How ironic, he could save others from napalm but not himself.",
+    "Somebody has to save our rice.",
+
+    # Full Metal Jacket.
+    "Is that you John Wayne? Is it me?",
+    "I bet you could suck a golf ball through a garden hose.",
+    "You're so ugly you could be a modern art masterpiece!",
+    "Only steers and queers are from Texas.",
+    "Sucky sucky! Five Dolla!",
+    "You got girlfriend Vietnam?",
 ]
 
 

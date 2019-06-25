@@ -76,8 +76,10 @@ HH_QUOTES = [
 
     # Star Wars.
     "I love democracy.",
-    "How ironic, he could save others from napalm but not himself.",
     "Somebody has to save our rice.",
+    "Ironic. He could save others from napalm, but not himself.",
+    "Is it possible to learn this power?",
+    "Not from a G.I.",
 
     # Full Metal Jacket.
     "Is that you John Wayne? Is it me?",

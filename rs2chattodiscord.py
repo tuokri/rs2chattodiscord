@@ -73,6 +73,7 @@ HH_QUOTES = [
     "You can kill ten of my men for every one I kill of yours. But even at those odds, you will lose and I will win.",
     "Shh... Attack on ma mahk!",
     ":vc: > :svn: > :flag_us:",
+    "Swabbing side.",
 
     # Star Wars.
     "I love democracy.",

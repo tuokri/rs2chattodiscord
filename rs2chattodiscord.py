@@ -97,6 +97,8 @@ HH_QUOTES = [
     "Sucky sucky! Five Dolla!",
     "You got girlfriend Vietnam?",
     "You're so ugly you're a modern-art masterpiece!",
+    "I don't want no teenage queen, I just want my M14. If I die in the combat zone, box me up and ship me home!",
+    "LET ME SEE YOUR WAR FACE!",
 
     # Fallout.
     "Patrolling the jungle almost makes you wish for some Agent Orange",

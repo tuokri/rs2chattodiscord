@@ -74,6 +74,12 @@ HH_QUOTES = [
     "Shh... Attack on ma mahk!",
     ":vc: > :svn: > :flag_us:",
     "Swabbing side.",
+    "Fohh bakk, so we can attack, once more!",
+    "Move to the place of your permanent residence, government issue man!",
+    "Absent yourself from the land area geographically located in the Asian subcontinent, land-bordered "
+    "by China, Laos and Cambodia, designated 'Vietnam' in the American English language, and change "
+    "position in a specified manner to the area or facility providing facilities for sleeping, preparing "
+    "food, eating and hygiene, soldier of the United States Army or marine of the United States Marine Corps.",
 
     # Star Wars.
     "I love democracy.",
@@ -81,6 +87,7 @@ HH_QUOTES = [
     "Ironic. He could save others from napalm, but not himself.",
     "Is it possible to learn this power?",
     "Not from a G.I.",
+    "I don't like Sandy April. It's coarse and rough and irritating and it gets everywhere.",
 
     # Full Metal Jacket.
     "Is that you John Wayne? Is it me?",
@@ -89,6 +96,7 @@ HH_QUOTES = [
     "Only steers and queers are from Texas.",
     "Sucky sucky! Five Dolla!",
     "You got girlfriend Vietnam?",
+    "You're so ugly you're a modern-art masterpiece!",
 ]
 
 

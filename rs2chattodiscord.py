@@ -97,6 +97,9 @@ HH_QUOTES = [
     "Sucky sucky! Five Dolla!",
     "You got girlfriend Vietnam?",
     "You're so ugly you're a modern-art masterpiece!",
+
+    # Fallout.
+    "Patrolling the jungle almost makes you wish for some Agent Orange",
 ]
 
 

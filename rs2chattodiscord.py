@@ -102,6 +102,9 @@ HH_QUOTES = [
 
     # Fallout.
     "Patrolling the jungle almost makes you wish for some Agent Orange",
+
+    # Arrested Development.
+    "I don't understand the question and I won't respond to it.",
 ]
 
 

@@ -2,6 +2,7 @@
 
 import argparse
 import configparser as cp
+import datetime
 import hashlib
 import logging
 import multiprocessing as mp
@@ -26,7 +27,7 @@ logger = logging.getLogger(__file__ + ":" + __name__)
 HEADERS = {}
 HEADERS_MAX_LEN = 50
 RUNNING = True
-MESSAGE_FORMAT = "({team}){emoji} **{username}**: {message}"
+MESSAGE_FORMAT = "__{date}__: ({team}){emoji} **{username}**: {message}"
 NOTICE_FORMAT = "**{message}**"
 NORTH_EMOJI = ":red_circle:"
 SOUTH_EMOJI = ":large_blue_circle:"
@@ -549,8 +550,10 @@ def discord_webhook_worker(queue: mp.Queue, log_queue: mp.Queue, yd: YaaDiscord)
                 team = "ALL"
                 emoji = ""
 
+            d = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc, microsecond=0).isoformat(" ")
             chat_msg = MESSAGE_FORMAT.format(
-                team=team, emoji=emoji, username=name.text, message=msg.text)
+                date=d, team=team, emoji=emoji,
+                username=name.text, message=msg.text)
             logger.info("discord_webhook_worker(): Posting message: %s", chat_msg)
             success = yd.post_chat_message(chat_msg)
             if not success:

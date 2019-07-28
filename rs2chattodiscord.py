@@ -73,7 +73,7 @@ HH_QUOTES = [
     "we shall fight to the end, until Vietnam is fully independent and reunified.",
     "You can kill ten of my men for every one I kill of yours. But even at those odds, you will lose and I will win.",
     "Shh... Attack on ma mahk!",
-    ":vc: > :svn: > :flag_us:",
+    # ":vc: > :svn: > :flag_us:",  # TODO: Correctly format custom emojis.
     "Swabbing side.",
     "Fohh bakk, so we can attack, once more!",
     "Move to the place of your permanent residence, government issue man!",
@@ -110,6 +110,7 @@ HH_QUOTES = [
     # Ada...
     "I really like making fun of people in mortar squads.",
     "The U.S.' imperialist war was lost not because of Washington's meddling, but because of the US mortar squads.",
+    "Vietnam is my city.",
 ]
 
 

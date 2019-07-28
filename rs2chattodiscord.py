@@ -106,6 +106,10 @@ HH_QUOTES = [
 
     # Arrested Development.
     "I don't understand the question and I won't respond to it.",
+
+    # Ada...
+    "I really like making fun of people in mortar squads.",
+    "The U.S.' imperialist war was lost not because of Washington's meddling, but because of the US mortar squads.",
 ]
 
 

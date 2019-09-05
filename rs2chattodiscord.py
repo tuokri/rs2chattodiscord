@@ -113,22 +113,24 @@ HH_QUOTES = [
     "Vietnam is my city.",
     "Yeet the imperialists out.",
     "A capitalist worked out today. Did you, comrade?",
-    "All cops are bastards",
+    "A capitalist worked hard today. Did you, comrade?",
+    "All cops are bastards.",
     "The only thing that could stop the Vietnamese advance is Gorbachev starring in a Pizza Hut commercial.",
     "They did my boy Allende dirty.",
     "It's about to start trickling down, I promise.",
     "The revolution begins when the Team Fortress 2 economy crashes.",
     "Lincoln once said that if you are racist he will attack you with the North.",
     "Heroes never die!",
-    "Minecraft is instrumental in teaching the proletariat about proper animal herding and farming",
+    "Minecraft is instrumental in teaching the proletariat about proper animal herding and farming.",
     "Look at the top of his head.",
-    "Our government has a firm policy not to capitulate to terrorist demands. "
-    "That no-concessions policy remains in force, in spite of the wildly speculative "
-    "and false stories about arms for hostages and alleged ransom payments, we did not, repeat, "
-    "did not trade weapons or anything else for hostages, nor will we.",
-    "A few months ago I told the American people I did not trade arms for hostages. "
-    "My heart and my best intentions still tell me that's true, "
-    "but the facts and the evidence tell me it is not.",
+    # Disabled until further notice.
+    # "Our government has a firm policy not to capitulate to terrorist demands. "
+    # "That no-concessions policy remains in force, in spite of the wildly speculative "
+    # "and false stories about arms for hostages and alleged ransom payments, we did not, repeat, "
+    # "did not trade weapons or anything else for hostages, nor will we.",
+    # "A few months ago I told the American people I did not trade arms for hostages. "
+    # "My heart and my best intentions still tell me that's true, "
+    # "but the facts and the evidence tell me it is not.",
     "Spongebob is a capitalist bootlicker. Squidward is the real hero of the revolution.",
     "The rice rations have been upped from 3 to 2.",
 ]

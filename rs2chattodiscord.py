@@ -579,9 +579,10 @@ def discord_webhook_worker(queue: mp.Queue, log_queue: mp.Queue, yd: YaaDiscord)
                 emoji = ""
 
             d = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc, microsecond=0).isoformat(" ")
+            sanitized_msg = msg.text.replace("@", "[at]")
             chat_msg = MESSAGE_FORMAT.format(
                 date=d, team=team, emoji=emoji,
-                username=name.text, message=msg.text)
+                username=name.text, message=sanitized_msg)
             logger.info("discord_webhook_worker(): Posting message: %s", chat_msg)
             success = yd.post_chat_message(chat_msg)
             if not success:

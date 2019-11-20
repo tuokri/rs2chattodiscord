@@ -527,7 +527,7 @@ def rs2_webadmin_worker(delayed_queue: mp.Queue, instant_queue: mp.Queue, log_qu
 
             for i, div in enumerate(chat_message_divs):
                 tc, tn, name, msg = parse_chat_message_div(div)
-                sanitized_msg = msg.text.replace("@", "\\@")
+                sanitized_msg = msg.text.replace("@", "[at]")
                 if msg.text.lower().lstrip().startswith(PING_ADMIN):
                     logger.info("rs2_webadmin_worker(): detected !admin ping")
                     instant_queue.put(div)

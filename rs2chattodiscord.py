@@ -527,8 +527,7 @@ def rs2_webadmin_worker(delayed_queue: mp.Queue, instant_queue: mp.Queue, log_qu
 
             for i, div in enumerate(chat_message_divs):
                 tc, tn, name, msg = parse_chat_message_div(div)
-                msg.text = msg.text.replace("@", "[at]")
-                msg.text = msg.text.replace("<", "(")
+                sanitized_msg = msg.text.replace("@", "\\@")
                 if msg.text.lower().lstrip().startswith(PING_ADMIN):
                     logger.info("rs2_webadmin_worker(): detected !admin ping")
                     instant_queue.put(div)
@@ -536,7 +535,7 @@ def rs2_webadmin_worker(delayed_queue: mp.Queue, instant_queue: mp.Queue, log_qu
                     ping_div = BeautifulSoup(f"""<div class="chatmessage">
                         <span class="teamcolor" style="background: #E54927;">&#160;</span>
                         <span class="username">__RADIOMAN__</span>:
-                        <span class="message">__ADMIN SUMMONED INGAME__ by: {name}! {PING_HC} {PING_PO} '{msg.text}'</span>
+                        <span class="message">__ADMIN SUMMONED INGAME__ by: {name}! {PING_HC} {PING_PO} '{sanitized_msg}'</span>
                         </div>""", features="html.parser")
                     if time.time() > (last_ping_time + (60 * 15)):
                         instant_queue.put(ping_div)
